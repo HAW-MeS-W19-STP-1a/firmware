@@ -2,3 +2,6 @@
 *.tmp
 *.dep
 *.pdb
+*.wed
+bin/Debug/
+bin/Release/
