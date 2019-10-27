@@ -122,7 +122,7 @@ void sunephem
 		printf("You need to update the almanac for years outside\n");
 		printf("that range\n");
 		printf("... Aborting …\n\n");
-		exit(1);
+		return;
 	}
 	/* calculate the julian day - use algorithm given by
 	Montenbruck p33-34. Only consider dates on or after 15-10-1582 */
@@ -142,7 +142,7 @@ void sunephem
 					printf(" * **Error * **can’t correctly calculate dates before\n");
 					printf(" 15 - 10 - 1582\n");
 					printf("... aborting …\n\n\n");
-					exit(1);
+					return;
 				}
 			}
 		}
@@ -312,7 +312,7 @@ void sunprezd
 			printf("Variable sun_pos not specified correctly in call\n");
 			printf("to sunprezd routine.\n");
 			printf("... aborting ... \n");
-			exit(1);
+			return;
 		}
 	}
 	/* this gives a tolerance for the iteration */
@@ -336,7 +336,7 @@ void sunprezd
 		/* Note: this routine returns a pointer to sun_dist_au. Since sun_dist_au is already a pointer in
 		the sunprezd declaration, it is not prefixed by &. */
 		sunephem(year, month, day, *lstdt_dec, time_zone_dec, stn_lat_dec, stn_long_dec, printdataswitch,
-			&decl, &equation_time, &hour_angle, sun_dist_au, &sun_semi_diam);
+			&decl, &equation_time, &hour_angle, sun_dist_au, sun_semi_diam);
 		/* use ephemeris data to calculate zenith distance for that estimated local standard time */
 		sunazzd(hour_angle, decl, stn_lat_dec, printdataswitch, &azimuth, &zenith_calc);
 		/* the sun moves (very) approximately 180 deg in 12 hours, which is 15 deg per hour. Thus we
