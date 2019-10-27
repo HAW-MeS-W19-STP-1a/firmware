@@ -45,6 +45,16 @@
 /* #define STM8L05X_HD_VL */  /*!< STM8L05X_HD_VL: STM8L052xx8 High density value line devices */
 /* #define STM8AL31_L_MD */   /*!< STM8AL31_L_MD: STM8AL3x Medium density devices */
 
+/* Use custom xintx_t definitions */
+#define noSTM8LIB_USE_CUSTOM_INTS
+#ifndef STM8LIB_USE_CUSTOM_INTS
+#include <stdint.h> /* otherwise include stdint header */
+#endif /* STM8LIB_USE_CUSTOM_INTS */
+
+#define noSTM8LIB_USE_CUSTOM_BOOL
+#ifndef STM8LIB_USE_CUSTOM_BOOL
+#include <stdbool.h>
+#endif /* STM8LIB_USE_CUSTOM_BOOL */
 
 /*  Tip: To avoid modifying this file each time you need to switch between these
         devices, you can define the device in your toolchain compiler preprocessor.
@@ -218,6 +228,7 @@ defined (STM8L05X_LD_VL) || defined (STM8L05X_MD_VL) || defined (STM8AL31_L_MD)
 #define     __O     volatile         /*!< defines 'write only' permissions    */
 #define     __IO    volatile         /*!< defines 'read / write' permissions  */
 
+#ifdef STM8LIB_USE_CUSTOM_INTS
 /*!< Signed integer types  */
 typedef   signed char     int8_t;
 typedef   signed short    int16_t;
@@ -227,7 +238,7 @@ typedef   signed long     int32_t;
 typedef unsigned char     uint8_t;
 typedef unsigned short    uint16_t;
 typedef unsigned long     uint32_t;
-
+#endif /* STM8LIB_USE_CUSTOM_INTS */
 /*!< STM8Lx Standard Peripheral Library old types (maintained for legacy purpose) */
 
 typedef int32_t  s32;
@@ -238,8 +249,12 @@ typedef uint32_t  u32;
 typedef uint16_t u16;
 typedef uint8_t  u8;
 
-
+#ifdef STM8LIB_USE_CUSTOM_BOOL
 typedef enum {FALSE = 0, TRUE = !FALSE} bool;
+#else
+#define FALSE false
+#define TRUE true
+#endif /* STM8LIB_USE_CUSTOM_BOOL */
 
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus, BitStatus, BitAction;
 

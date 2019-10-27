@@ -3,5 +3,7 @@
 *.dep
 *.pdb
 *.wed
+*.spy
+TAGS*
 bin/Debug/
 bin/Release/

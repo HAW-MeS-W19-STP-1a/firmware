@@ -19,6 +19,9 @@ struct interrupt_vector {
 
 extern void _stext();     /* startup routine */
 extern @far @interrupt void Timer2Interrupt(void);
+extern @far @interrupt void I2CMaster_Int_I2CInterruptHandler(void);
+extern @far @interrupt void UART1_RxInterruptHandler(void);
+extern @far @interrupt void UART1_TxInterruptHandler(void);
 
 struct interrupt_vector const _vectab[] = {
 	{0x82, (interrupt_handler_t)_stext}, /* reset */
@@ -50,7 +53,7 @@ struct interrupt_vector const _vectab[] = {
 	{0x82, NonHandledInterrupt}, /* tim1cc */
 	{0x82, NonHandledInterrupt}, /* tim4upd */
 	{0x82, NonHandledInterrupt}, /* spi1eot */
-	{0x82, NonHandledInterrupt}, /* usart1tx tim5 */
-	{0x82, NonHandledInterrupt}, /* usart1rx tim5cc */
-	{0x82, NonHandledInterrupt}, /* i2c spi2 */
+	{0x82, UART1_TxInterruptHandler}, /* usart1tx tim5 */
+	{0x82, UART1_RxInterruptHandler}, /* usart1rx tim5cc */
+	{0x82, I2CMaster_Int_I2CInterruptHandler}, /* i2c spi2 */
 };
