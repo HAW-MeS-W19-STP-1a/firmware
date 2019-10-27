@@ -22,6 +22,8 @@ extern @far @interrupt void Timer2Interrupt(void);
 extern @far @interrupt void I2CMaster_Int_I2CInterruptHandler(void);
 extern @far @interrupt void UART1_RxInterruptHandler(void);
 extern @far @interrupt void UART1_TxInterruptHandler(void);
+extern @far @interrupt void UART3_RxInterruptHandler(void);
+extern @far @interrupt void UART3_TxInterruptHandler(void);
 
 struct interrupt_vector const _vectab[] = {
 	{0x82, (interrupt_handler_t)_stext}, /* reset */
@@ -47,8 +49,8 @@ struct interrupt_vector const _vectab[] = {
 	{0x82, NonHandledInterrupt}, /* adc */
 	{0x82, Timer2Interrupt}, /* tim2 usart2tx */
 	{0x82, NonHandledInterrupt}, /* tim2cc usart2rx  */
-	{0x82, NonHandledInterrupt}, /* tim3 usart3tx */
-	{0x82, NonHandledInterrupt}, /* tim3cc usart3rx */
+	{0x82, UART3_TxInterruptHandler}, /* tim3 usart3tx */
+	{0x82, UART3_RxInterruptHandler}, /* tim3cc usart3rx */
 	{0x82, NonHandledInterrupt}, /* tim1upd */
 	{0x82, NonHandledInterrupt}, /* tim1cc */
 	{0x82, NonHandledInterrupt}, /* tim4upd */
