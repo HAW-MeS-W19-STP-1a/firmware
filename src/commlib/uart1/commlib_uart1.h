@@ -1,3 +1,12 @@
+/*!****************************************************************************
+ * @file
+ * commlib_uart1.h
+ *
+ * Handler für serielle Kommunikation über die USART1-Schnittstelle.
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
+
 #ifndef COMMLIB_UART1_H_
 #define COMMLIB_UART1_H_
 
@@ -7,11 +16,15 @@
 
 
 /*- Symbolische Konstanten ---------------------------------------------------*/
+/*! Pufferlänge                                                               */
 #define COMMLIB_UART1_MAX_BUF  64
 
 
 /*- Globale Variablen --------------------------------------------------------*/
+/*! Sendepuffer                                                               */
 extern volatile uint8_t aucUart1TxBuf[COMMLIB_UART1_MAX_BUF];
+
+/*! Empfangspuffer                                                            */
 extern volatile uint8_t aucUart1RxBuf[COMMLIB_UART1_MAX_BUF];
 
 

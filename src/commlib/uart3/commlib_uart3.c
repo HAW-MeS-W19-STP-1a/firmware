@@ -1,36 +1,83 @@
+/*!****************************************************************************
+ * @file
+ * commlib_uart3.c
+ *
+ * Handler für serielle Kommunikation über die USART3-Schnittstelle.
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
+
 /*- Headerdateien ------------------------------------------------------------*/
 #include "stm8l15x.h"
 #include "commlib_uart3.h"
 
 
 /*- Typdefinitionen ----------------------------------------------------------*/
+/*!****************************************************************************
+ * @brief
+ * Interne Zustandskodierung für den Übertragungsmodus
+ *
+ * @date 26.10.2019
+ ******************************************************************************/
 typedef enum tag_USART3_Mode {
+  /*! Schnittstelle nicht aktiv                           */
   UART3_Mode_IDLE,
+  
+  /*! Feste Anzahl an Zeichen senden/empfangen            */
   UART3_Mode_LENGTH,
+  
+  /*! Bis zum Marker-Zeichen senden/empfangen             */
   UART3_Mode_CHAR
 } UART3_Mode;
 
 
 /*- Globale Variablen --------------------------------------------------------*/
-volatile uint8_t aucUart3TxBuf[COMMLIB_UART3_MAX_BUF];
-volatile uint8_t aucUart3RxBuf[COMMLIB_UART3_MAX_BUF];
+/*! Sendepuffer                                                               */
+volatile uint8_t aucUart3TxBuf[COMMLIB_UART3TX_MAX_BUF];
+
+/*! Empfangspuffer                                                            */
+volatile uint8_t aucUart3RxBuf[COMMLIB_UART3RX_MAX_BUF];
+
+/*! Zähler für gesendete Zeichen                                              */
 volatile uint8_t ucUart3TxCtr;
+
+/*! Maximale Anzahl zu sendender Zeichen                                      */
 volatile uint8_t ucUart3TxLen;
+
+/*! Marker-Zeichen für Ende der Sendedaten                                    */
 volatile char cUart3TxEndChar;
+
+/*! Zähler für empfangene Zeichen                                             */
 volatile uint8_t ucUart3RxCtr;
+
+/*! Maximale Anzahl zu empfangender Zeichen                                   */
 volatile uint8_t ucUart3RxLen;
+
+/*! Marker-Zeichen für Ende der Empfangsdaten                                 */
 volatile char cUart3RxEndChar;
+
+/*! Zustandsspeicher für Empfansmodus                                         */
 volatile UART3_Mode eUart3RxMode;
+
+/*! Zustandsspeicher für Sendemodus                                           */
 volatile UART3_Mode eUart3TxMode;
 
 
+/*!****************************************************************************
+ * @brief
+ * Modulinitialisierung
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_Init(void)
 {
+  /* Peripheriemodul initialisieren                       */
   CLK_PeripheralClockConfig(CLK_Peripheral_USART3, ENABLE);
   USART_Init(USART3, 9600, USART_WordLength_8b, USART_StopBits_1, USART_Parity_No, USART_Mode_Rx | USART_Mode_Tx);
   USART_ClearFlag(USART3, USART_FLAG_FE);
   USART_Cmd(USART3, ENABLE);
   
+  /* Interne Zustandsvariablen initialisieren             */
   ucUart3TxCtr = 0;
   ucUart3TxLen = 0;
   cUart3TxEndChar = '\0';
@@ -41,6 +88,12 @@ void UART3_Init(void)
   eUart3RxMode = UART3_Mode_IDLE;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Modul deaktivieren
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_DeInit(void)
 {
   USART_Cmd(USART3, DISABLE);
@@ -49,6 +102,14 @@ void UART3_DeInit(void)
   CLK_PeripheralClockConfig(CLK_Peripheral_USART3, DISABLE);
 }
 
+/*!****************************************************************************
+ * @brief
+ * Daten aus dem Sendepuffer übertragen
+ *
+ * @param[in] ucLength    Anzahl der zu sendenden Bytes
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_Send(uint8_t ucLength)
 {
   eUart3TxMode = UART3_Mode_LENGTH;
@@ -59,6 +120,15 @@ void UART3_Send(uint8_t ucLength)
   USART_ITConfig(USART3, USART_IT_TXE, ENABLE);
 }
 
+/*!****************************************************************************
+ * @brief
+ * Daten aus dem Sendepuffer übertragen, bis Marker-Zeichen gefunden wird
+ * 
+ * @param[in] cEndMarker  Marker-Zeichen für Ende der Daten
+ * @param[in] ucMaxLength Max. Länge der Sendedaten
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_SendUntil(char cEndMarker, uint8_t ucMaxLength)
 {
   eUart3TxMode = UART3_Mode_CHAR;
@@ -69,6 +139,14 @@ void UART3_SendUntil(char cEndMarker, uint8_t ucMaxLength)
   USART_ITConfig(USART3, USART_IT_TXE, ENABLE);
 }
 
+/*!****************************************************************************
+ * @brief
+ * Datenempfang in den Empfangspuffer starten
+ *
+ * @param[in] ucLength    Datenlänge, nach der die Übertragung abgeschlossen ist
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_Receive(uint8_t ucLength)
 {
   eUart3RxMode = UART3_Mode_LENGTH;
@@ -79,6 +157,15 @@ void UART3_Receive(uint8_t ucLength)
   USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 }
 
+/*!****************************************************************************
+ * @brief
+ * Datenempfang starten. Einlesen, bis das Marker-Zeichen gefunden wurde
+ *
+ * @param[in] cEndMarker  Marker-Zeichen zum Beenden der Übertragung
+ * @param[in] ucMaxLength Maximale Datenlänge
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_ReceiveUntil(char cEndMarker, uint8_t ucMaxLength)
 {
   eUart3RxMode = UART3_Mode_CHAR;
@@ -89,39 +176,85 @@ void UART3_ReceiveUntil(char cEndMarker, uint8_t ucMaxLength)
   USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 }
 
+/*!****************************************************************************
+ * @brief
+ * Anzahl der empfangenen Bytes ermitteln
+ *
+ * @return  uint8_t   Anzahl der empfangenen Bytes im Puffer
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 uint8_t UART3_GetRxCount(void)
 {
   return ucUart3RxCtr;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Prüfen, ob der Datenempfang abgeschlossen wurde
+ *
+ * @return  bool      True, wenn keine Übertragung aktiv ist 
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 bool UART3_IsRxReady(void)
 {
   return (eUart3RxMode == UART3_Mode_IDLE);
 }
 
+/*!****************************************************************************
+ * @brief
+ * Prüfen, ob der Sendevorgang abgeschlossen wurde
+ *
+ * @return  bool      True, wenn keine Übertragung aktiv ist
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 bool UART3_IsTxReady(void)
 {
   return (eUart3TxMode == UART3_Mode_IDLE);
 }
 
+/*!****************************************************************************
+ * @brief
+ * Empfangspuffer leeren
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_FlushRx(void)
 {
   uint8_t ucIndex;
-  for (ucIndex = 0; ucIndex < COMMLIB_UART3_MAX_BUF; ++ucIndex)
+  for (ucIndex = 0; ucIndex < COMMLIB_UART3RX_MAX_BUF; ++ucIndex)
   {
     aucUart3RxBuf[ucIndex] = 0;
   }
+  ucUart3RxCtr = 0;
+  ucUart3RxLen = 0;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Sendepuffer leeren
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 void UART3_FlushTx(void)
 {
   uint8_t ucIndex;
-  for (ucIndex = 0; ucIndex < COMMLIB_UART3_MAX_BUF; ++ucIndex)
+  for (ucIndex = 0; ucIndex < COMMLIB_UART3TX_MAX_BUF; ++ucIndex)
   {
     aucUart3TxBuf[ucIndex] = 0;
   }
+  ucUart3TxCtr = 0;
+  ucUart3TxLen = 0;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Interruptserviceroutine für Datenausgabe an der UART3-Schnittstelle
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 @far @interrupt void UART3_TxInterruptHandler(void)
 {
   switch (eUart3TxMode)
@@ -158,6 +291,12 @@ void UART3_FlushTx(void)
   }
 }
 
+/*!****************************************************************************
+ * @brief
+ * Interruptserviceroutine für Datenempfang an der UART3-Schnittstelle
+ *
+ * @date  26.10.2019
+ ******************************************************************************/
 @far @interrupt void UART3_RxInterruptHandler(void)
 {
   uint8_t ucRxData = USART_ReceiveData8(USART3);
