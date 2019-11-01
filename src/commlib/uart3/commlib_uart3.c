@@ -26,8 +26,12 @@ typedef enum tag_USART3_Mode {
   /*! Feste Anzahl an Zeichen senden/empfangen            */
   UART3_Mode_LENGTH,
   
+  UART3_Mode_LENGTH_TRIGGER,
+  
   /*! Bis zum Marker-Zeichen senden/empfangen             */
-  UART3_Mode_CHAR
+  UART3_Mode_CHAR,
+  
+  UART3_Mode_CHAR_TRIGGER
 } UART3_Mode;
 
 
@@ -56,6 +60,9 @@ volatile uint8_t ucUart3RxLen;
 /*! Marker-Zeichen für Ende der Empfangsdaten                                 */
 volatile char cUart3RxEndChar;
 
+/*! Marker-Zeichen für Anfang der Empfangsdaten                               */
+volatile char cUart3RxStartChar;
+
 /*! Zustandsspeicher für Empfansmodus                                         */
 volatile UART3_Mode eUart3RxMode;
 
@@ -76,6 +83,7 @@ void UART3_Init(void)
   USART_Init(USART3, 9600, USART_WordLength_8b, USART_StopBits_1, USART_Parity_No, USART_Mode_Rx | USART_Mode_Tx);
   USART_ClearFlag(USART3, USART_FLAG_FE);
   USART_Cmd(USART3, ENABLE);
+  USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
   
   /* Interne Zustandsvariablen initialisieren             */
   ucUart3TxCtr = 0;
@@ -149,6 +157,7 @@ void UART3_SendUntil(char cEndMarker, uint8_t ucMaxLength)
  ******************************************************************************/
 void UART3_Receive(uint8_t ucLength)
 {
+USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
   eUart3RxMode = UART3_Mode_LENGTH;
   cUart3RxEndChar = '\0';
   ucUart3RxCtr = 0;
@@ -168,7 +177,30 @@ void UART3_Receive(uint8_t ucLength)
  ******************************************************************************/
 void UART3_ReceiveUntil(char cEndMarker, uint8_t ucMaxLength)
 {
+  USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
   eUart3RxMode = UART3_Mode_CHAR;
+  cUart3RxEndChar = cEndMarker;
+  ucUart3RxCtr = 0;
+  ucUart3RxLen = ucMaxLength;
+  USART_ReceiveData8(USART3);
+  USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+}
+
+/*!****************************************************************************
+ * @brief
+ * Datenempfang starten. Einlesen, bis das Marker-Zeichen gefunden wurde. Emp-
+ * fang bei Triggerzeichen starten
+ *
+ * @param[in] cEndMarker  Marker-Zeichen zum Beenden der Übertragung
+ * @param[in] ucMaxLength Maximale Datenlänge
+ *
+ * @date  30.10.2019
+ ******************************************************************************/
+void UART3_ReceiveUntilTrig(char cStartMarker, char cEndMarker, uint8_t ucMaxLength)
+{
+  USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
+  eUart3RxMode = UART3_Mode_CHAR_TRIGGER;
+  cUart3RxStartChar = cStartMarker;
   cUart3RxEndChar = cEndMarker;
   ucUart3RxCtr = 0;
   ucUart3RxLen = ucMaxLength;
@@ -296,6 +328,7 @@ void UART3_FlushTx(void)
  * Interruptserviceroutine für Datenempfang an der UART3-Schnittstelle
  *
  * @date  26.10.2019
+ * @date  30.10.2019    Trigger hinzugefügt
  ******************************************************************************/
 @far @interrupt void UART3_RxInterruptHandler(void)
 {
@@ -303,46 +336,49 @@ void UART3_FlushTx(void)
   
   switch (eUart3RxMode)
   {
-    case UART3_Mode_CHAR:
-      if ((ucUart3RxCtr < ucUart3RxLen) && ((char)ucRxData != cUart3RxEndChar))
+    case UART3_Mode_CHAR_TRIGGER:
+      if (ucRxData == cUart3RxStartChar)
       {
         aucUart3RxBuf[ucUart3RxCtr] = ucRxData;
         ++ucUart3RxCtr;
-        
-        if (ucUart3RxCtr == ucUart3RxLen)
-        {
-          eUart3RxMode = UART3_Mode_IDLE;
-          USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
-        }
+        eUart3RxMode = UART3_Mode_CHAR;
       }
-      else
+      break;
+      
+    case UART3_Mode_LENGTH_TRIGGER:
+      if (ucRxData == cUart3RxStartChar)
       {
-        eUart3RxMode = UART3_Mode_IDLE;
-        USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
+        aucUart3RxBuf[ucUart3RxCtr] = ucRxData;
+        ++ucUart3RxCtr;
+        eUart3RxMode = UART3_Mode_LENGTH;
       }
       break;
     
+    case UART3_Mode_CHAR:
+      if (ucUart3RxCtr < ucUart3RxLen)
+      {
+        aucUart3RxBuf[ucUart3RxCtr] = ucRxData;
+        ++ucUart3RxCtr;
+      }
+      if (((char)ucRxData == cUart3RxEndChar) || (ucUart3RxCtr >= ucUart3RxLen))
+      {
+        eUart3RxMode = UART3_Mode_IDLE;
+      }
+      break;
+      
     case UART3_Mode_LENGTH:
       if (ucUart3RxCtr < ucUart3RxLen)
       {
-        aucUart3RxBuf[ucUart3RxCtr] = USART_ReceiveData8(USART3);
+        aucUart3RxBuf[ucUart3RxCtr] = ucRxData;
         ++ucUart3RxCtr;
-        
-        if (ucUart3RxCtr == ucUart3RxLen)
-        {
-          eUart3RxMode = UART3_Mode_IDLE;
-          USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
-        }
       }
-      else
+      if (ucUart3RxCtr >= ucUart3RxLen)
       {
         eUart3RxMode = UART3_Mode_IDLE;
-        USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
       }
       break;
-    
-    case UART3_Mode_IDLE:
+      
     default:
-      USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
+      ;
   }
 }

@@ -39,6 +39,7 @@ void UART3_Send(uint8_t ucLength);
 void UART3_SendUntil(char cEndMarker, uint8_t ucMaxLength);
 void UART3_Receive(uint8_t ucLength);
 void UART3_ReceiveUntil(char cEndMarker, uint8_t ucMaxLength);
+void UART3_ReceiveUntilTrig(char cStartMarker, char cEndMarker, uint8_t ucMaxLength);
 uint8_t UART3_GetRxCount(void);
 
 bool UART3_IsRxReady(void);
