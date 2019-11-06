@@ -2,8 +2,8 @@
  * @file
  * sensorlib_qmc5883_internal.h
  *
- * Interne Funktionen zur Auswertung und Kommunikation mit dem QMC5883 Be-
- * schleunigungssensor
+ * Interne Funktionen zur Auswertung und Kommunikation mit dem QMC5883 Magneto-
+ * meter
  *
  * @date  31.10.2019
  ******************************************************************************/
@@ -78,13 +78,13 @@ typedef enum tag_QMC5883_DataRate {
 
 /*!****************************************************************************
  * @brief
- * Optionen für den Messbereich
+ * Optionen für den Messbereich (Gauss)
  *
  * @date  31.10.2019
  ******************************************************************************/
 typedef enum tag_QMC5883_Range {
-  QMC5883_Range_2g = 0,
-  QMC5883_Range_8g = 1
+  QMC5883_Range_2G = 0,
+  QMC5883_Range_8G = 1
 } QMC5883_Range;
 
 /*!****************************************************************************
@@ -120,6 +120,7 @@ QMC5883_Range QMC5883_GetRange(QMC5883_Sensor* pSensor);
 QMC5883_DataRate QMC5883_GetDataRate(QMC5883_Sensor* pSensor);
 QMC5883_Mode QMC5883_GetMode(QMC5883_Sensor* pSensor);
 uint8_t QMC5883_GetSRST(QMC5883_Sensor* pSensor);
+uint8_t QMC5883_GetStatus(QMC5883_Sensor* pSensor);
 bool QMC5883_IsDataReady(QMC5883_Sensor* pSensor);
 bool QMC5883_IsOverflow(QMC5883_Sensor* pSensor);
 bool QMC5883_IsDataSkip(QMC5883_Sensor* pSensor);
@@ -131,7 +132,7 @@ void QMC5883_SetMode(QMC5883_Sensor* pSensor, QMC5883_Mode eMode);
 void QMC5883_SoftReset(QMC5883_Sensor* pSensor);
 void QMC5883_GetSensorData(QMC5883_Sensor* pSensor);
 
-int16_t QMC5883_CalcPlaneAngle(QMC5883_Sensor* pSensor);
+uint16_t QMC5883_CalcAzimuth(QMC5883_Sensor* pSensor);
 int16_t QMC5883_CalcTemperature(QMC5883_Sensor* pSensor);
 
 #endif /* SENSORLIB_QMC5883_INTERNAL_H_ */

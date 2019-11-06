@@ -2,13 +2,14 @@
  * @file
  * sensorlib_qmc5883_internal.h
  *
- * Interne Funktionen zur Auswertung und Kommunikation mit dem QMC5883 Be-
- * schleunigungssensor
+ * Interne Funktionen zur Auswertung und Kommunikation mit dem QMC5883 Magneto-
+ * meter
  *
  * @date  31.10.2019
  ******************************************************************************/
  
 /*- Headerdateien ------------------------------------------------------------*/
+#include <math.h>
 #include "stm8l15x.h"
 #include "commlib.h"
 #include "sensorlib_qmc5883_internal.h"
@@ -141,6 +142,20 @@ uint8_t QMC5883_GetSRST(QMC5883_Sensor* pSensor)
  *
  * @date  31.10.2019
  ******************************************************************************/
+uint8_t QMC5883_GetStatus(QMC5883_Sensor* pSensor)
+{
+  return QMC5883_ReadRegister(pSensor, QMC5883_Register_STATUS);
+}
+
+/*!****************************************************************************
+ * @brief
+ * Prüfen, ob Messwerte zum Ablesen bereitstehen
+ *
+ * @param[in] *pSensor  Sensor-Struktur
+ * @return    bool      true, wenn Daten zum Lesen bereitstehen
+ *
+ * @date  31.10.2019
+ ******************************************************************************/
 bool QMC5883_IsDataReady(QMC5883_Sensor* pSensor)
 {
   uint8_t ucValue =  QMC5883_ReadRegister(pSensor, QMC5883_Register_STATUS);
@@ -262,17 +277,22 @@ void QMC5883_GetSensorData(QMC5883_Sensor* pSensor)
 
 /*!****************************************************************************
  * @brief
- * Winkel zwischen Lot und XY-Fläche entlang X-Achse ermitteln
+ * Kompassrichtung auf x/y-Ebene berechnen
+ *
+ * Berechnet die Kompassrichtung mittels atan2 aus den X- und Y-Vektoren der
+ * Magnetfeldstärke. Um genau zu sein, muss die Z-Achse senkrecht zum Boden
+ * stehen, da ohne Beschleunigungssensor keine Pitch Kompensation möglich ist.
  *
  * @param[in] *pSensor  Sensor-Struktur
- * @return    uint16_t  Winkel in 0.1°
+ * @return    uint16_t  Richtung 0° ... 359.9° in 0.1° Auflösung
  *
  * @date  31.10.2019
+ * @date  01.11.2019
  ******************************************************************************/
-int16_t QMC5883_CalcPlaneAngle(QMC5883_Sensor* pSensor)
+uint16_t QMC5883_CalcAzimuth(QMC5883_Sensor* pSensor)
 {
-  // TODO
-  return 0;
+  int iAzimuth = atan2(pSensor->sRaw.iRawY, pSensor->sRaw.iRawX) * 573;
+  return (uint16_t)(iAzimuth < 0 ? iAzimuth + 3600 : iAzimuth);
 }
 
 /*!****************************************************************************

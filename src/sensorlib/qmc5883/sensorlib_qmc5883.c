@@ -2,7 +2,7 @@
  * @file
  * sensorlib_qmc5883.c
  *
- * Ansteuerung und Auswertung für den QMC5883 Beschleunigungssensor
+ * Ansteuerung und Auswertung für das QMC5883 Magnetometer
  * 
  * @date  31.10.2019
  ******************************************************************************/
@@ -35,11 +35,8 @@ void QMC5883_Init(QMC5883_Sensor* pSensor, uint8_t ucSlaveAddr)
   pSensor->ucSlaveAddr = ucSlaveAddr;
   
   /* Sensor ID prüfen                                     */
+  QMC5883_SoftReset(pSensor);
   while (QMC5883_GetChipID(pSensor) != 0xFF) { Power_Wait(); }
-  
-  /* Initialisierung entsprechend Datenblatt              */
-  QMC5883_SetSRST(pSensor, 0x01);
-  QMC5883_Configure(pSensor, false, false, QMC5883_Oversampling_64, QMC5883_Range_2g, QMC5883_DataRate_10Hz);
 }
 
 /*!****************************************************************************
@@ -49,15 +46,18 @@ void QMC5883_Init(QMC5883_Sensor* pSensor, uint8_t ucSlaveAddr)
  * @param[inout]  *pSensor  Sensor-Struktur
  *
  * @date  31.10.2019
+ * @date  01.10.2019  Bugfix: alte Statusflags vor dem Neustart zurücksetzen
  ******************************************************************************/
 void QMC5883_Update(QMC5883_Sensor* pSensor)
 {
+  QMC5883_SetSRST(pSensor, 0x01);
+  QMC5883_Configure(pSensor, false, false, QMC5883_Oversampling_64, QMC5883_Range_8G, QMC5883_DataRate_10Hz);
   QMC5883_SetMode(pSensor, QMC5883_Mode_CONT);
-  while (!QMC5883_IsDataReady(pSensor)) { Power_Wait(); }
+  while (!QMC5883_IsDataReady(pSensor));
   QMC5883_GetSensorData(pSensor);
-  QMC5883_SetMode(pSensor, QMC5883_Mode_STBY);
-  pSensor->sMeasure.iPlaneAngle = QMC5883_CalcPlaneAngle(pSensor);
+  pSensor->sMeasure.uiAzimuth = QMC5883_CalcAzimuth(pSensor);
   pSensor->sMeasure.iTemperature = QMC5883_CalcTemperature(pSensor);
+  QMC5883_SoftReset(pSensor);
 }
 
 /*!****************************************************************************

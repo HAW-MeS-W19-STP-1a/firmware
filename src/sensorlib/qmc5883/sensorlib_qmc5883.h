@@ -2,7 +2,7 @@
  * @file
  * sensorlib_qmc5883.h
  *
- * Ansteuerung und Auswertung für den QMC5883 Beschleunigungssensor
+ * Ansteuerung und Auswertung für das QMC5883 Magnetometer
  * 
  * @date  31.10.2019
  ******************************************************************************/
@@ -15,26 +15,48 @@
 
 
 /*- Symbolische Konstanten ---------------------------------------------------*/
+/*! Standardadresse für QMC5883                                               */
 #define QMC5883_DEFAULT_ADDR 0x0D
 
 
 /*- Typdefinitionen ----------------------------------------------------------*/
+/*!****************************************************************************
+ * @brief
+ * Sensordaten- und Konfigurationsstruktur für QMC5883
+ *
+ * @date  31.10.2019
+ ******************************************************************************/
 typedef struct tag_QMC5883_Sensor {
+  /*! I2C Slaveadresse                                    */
   uint8_t ucSlaveAddr;
   
+  /*! Kalibrierungsdaten                                  */
   struct {
+    /*! Referenztemperatur in 0.1°C                       */
     int16_t iRefTemp;
   } sCalib;
   
+  /*! Rohdaten                                            */
   struct {
+    /*! Feld in X-Richtung                                */
     int16_t iRawX;
+    
+    /*! Feld in Y-Richtung                                */
     int16_t iRawY;
+    
+    /*! Feld in Z-Richtung                                */
     int16_t iRawZ;
+    
+    /*! Temperatur-Rohwert                                */
     int16_t iRawTemp;
   } sRaw;
   
+  /*! Umgerechnete Messdaten                              */
   struct {
-    int16_t iPlaneAngle;
+    /*! Azimuth in 0.1°                                   */
+    uint16_t uiAzimuth;
+    
+    /*! Temperatur in 0.01°C                              */
     int16_t iTemperature;
   } sMeasure;
 } QMC5883_Sensor;
