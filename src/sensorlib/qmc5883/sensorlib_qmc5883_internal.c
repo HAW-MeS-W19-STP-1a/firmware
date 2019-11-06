@@ -26,7 +26,7 @@
  *
  * @date  31.10.2019
  ******************************************************************************/
-static uint8_t QMC5883_ReadRegister(QMC5883_Sensor* pSensor, QMC5883_Register eReg)
+static @inline uint8_t QMC5883_ReadRegister(QMC5883_Sensor* pSensor, QMC5883_Register eReg)
 {
   return I2CMaster_RegisterRead(pSensor->ucSlaveAddr, eReg);
 }
@@ -41,7 +41,7 @@ static uint8_t QMC5883_ReadRegister(QMC5883_Sensor* pSensor, QMC5883_Register eR
  *
  * @date  31.10.2019
  ******************************************************************************/
-static void QMC5883_WriteRegister(QMC5883_Sensor* pSensor, QMC5883_Register eReg, uint8_t ucVal)
+static @inline void QMC5883_WriteRegister(QMC5883_Sensor* pSensor, QMC5883_Register eReg, uint8_t ucVal)
 {
   I2CMaster_RegisterWrite(pSensor->ucSlaveAddr, eReg, ucVal);
 }

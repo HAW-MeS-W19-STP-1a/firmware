@@ -12,6 +12,7 @@
 
 #include "sensorlib_bme280.h"
 #include "sensorlib_cputemp.h"
+#include "sensorlib_mpu6050.h"
 #include "sensorlib_qmc5883.h"
 #include "sensorlib_wind.h"
 
