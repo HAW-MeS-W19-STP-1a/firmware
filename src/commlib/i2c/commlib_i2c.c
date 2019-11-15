@@ -79,6 +79,8 @@ void I2CMaster_RegisterWrite(uint8_t ucSlaveAddr, uint8_t ucRegister, uint8_t uc
   {
     I2C_GenerateSTOP(I2C1, ENABLE);
     while (I2C_GetFlagStatus(I2C1, I2C_FLAG_STOPF)) { Power_Wait(); }
+    I2C_GenerateSTOP(I2C1, DISABLE);
+    I2CMaster_Int_Flush();
   }
     
   /* Datensatz zusammenstellen */
@@ -105,6 +107,8 @@ uint8_t I2CMaster_RegisterRead(uint8_t ucSlaveAddr, uint8_t ucRegister)
   {
     I2C_GenerateSTOP(I2C1, ENABLE);
     while (I2C_GetFlagStatus(I2C1, I2C_FLAG_STOPF)) { Power_Wait(); }
+    I2C_GenerateSTOP(I2C1, DISABLE);
+    I2CMaster_Int_Flush();
   }
   
   /* Registeradresse senden                               */
