@@ -192,11 +192,11 @@ void main(void)
             UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
             while(!UART1_IsTxReady());
             UART1_FlushTx();
-            sprintf((volatile char*)aucUart1TxBuf, "\tg = GPS data\r\n\td = Date/Time from RTC\r\n\tz = Sun Zenith/Azimuth\r\n");
+            sprintf((volatile char*)aucUart1TxBuf, "\tg = GPS data\r\n\td = Date/Time from RTC\r\n\ta = Alignment\r\n");
             UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
             while(!UART1_IsTxReady());
             UART1_FlushTx();
-            sprintf((volatile char*)aucUart1TxBuf, "\ts = SR/SS\r\n\tr = Reset\r\n");
+            sprintf((volatile char*)aucUart1TxBuf, "\tz = Sun Zenith/Azimuth\r\n\ts = SR/SS\r\n\tr = Reset\r\n");
             break;
             
           case 't':
@@ -240,9 +240,9 @@ void main(void)
               sDate.RTC_Month,
               sDate.RTC_Date,
               sTime.RTC_Hours + (sTime.RTC_Minutes / 60.0) + (sTime.RTC_Seconds / 3600.0),
-              2,
-              53.55,
-              9.99,
+              0,
+              sSensorGPS.sPosition.lLat / 1000000.0,
+              sSensorGPS.sPosition.lLong / 1000000.0,
               &azimuth,
               &zenith
             );
@@ -262,9 +262,9 @@ void main(void)
               2000+sDate.RTC_Year,
               sDate.RTC_Month,
               sDate.RTC_Date,
-              2,
-              53.55,
-              9.99,
+              0,
+              sSensorGPS.sPosition.lLat / 1000000.0,
+              sSensorGPS.sPosition.lLong / 1000000.0,
               90,
               90,
               &sunrise,
