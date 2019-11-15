@@ -17,7 +17,7 @@
 
 /*- Symbolische Konstanten ---------------------------------------------------*/
 /*! Pufferlänge                                                               */
-#define COMMLIB_UART1_MAX_BUF  64
+#define COMMLIB_UART1_MAX_BUF  92
 
 
 /*- Globale Variablen --------------------------------------------------------*/
