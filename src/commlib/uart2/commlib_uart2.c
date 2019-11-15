@@ -24,7 +24,7 @@
 void UART2_Init(void)
 {
   CLK_PeripheralClockConfig(CLK_Peripheral_USART2, ENABLE);
-  USART_Init(USART2, 460800, USART_WordLength_8b, USART_StopBits_1, USART_Parity_No, USART_Mode_Tx);
+  USART_Init(USART2, 1000000, USART_WordLength_8b, USART_StopBits_1, USART_Parity_No, USART_Mode_Tx);
   USART_Cmd(USART2, ENABLE);
 }
 
