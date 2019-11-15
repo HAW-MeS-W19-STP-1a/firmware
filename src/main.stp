@@ -74,7 +74,7 @@ String.6.0=2019,10,14,21,7,36
 String.100.0=$(TargetFName)
 String.101.0=
 String.102.0=
-String.103.0=.\;stm8lib;sensorlib;commlib\i2c;powerlib;commlib\uart1;commlib\uart2;commlib\uart3;pfslib\source;userlib;sensorlib\bme280;
+String.103.0=.\;stm8lib;sensorlib;commlib\i2c;powerlib;commlib\uart1;commlib\uart2;commlib\uart3;pfslib\source;userlib;sensorlib\bme280;commlib;sensorlib\wind;app;sensorlib\cputemp;userlib\blinksequencer;userlib\bthandler;sensorlib\qmc5883;sensorlib\mpu6050;userlib\gpshandler;
 
 [Root.Config.0.Settings.2]
 String.2.0=
@@ -83,7 +83,7 @@ String.100.0=STM8L152R8
 
 [Root.Config.0.Settings.3]
 String.2.0=Compiling $(InputFile)...
-String.3.0=cxstm8 -isensorlib\bme280  +modsl -customDebCompat -customOpt-no -customC-pp -customLst -l -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
+String.3.0=cxstm8 -iuserlib\gpshandler  -isensorlib\mpu6050  -isensorlib\qmc5883  -iuserlib\bthandler  -iuserlib\blinksequencer  -isensorlib\cputemp  -iapp  -isensorlib\wind  -isensorlib\bme280  +modsl -customDebCompat -customOpt-no -customC-pp -customLst -l -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
 String.4.0=$(IntermPath)$(InputName).$(ObjectExt)
 String.5.0=$(IntermPath)$(InputName).ls
 String.6.0=2019,10,27,20,51,39
@@ -156,7 +156,7 @@ Int.108=0
 String.6.0=2019,10,14,21,7,36
 String.100.0=$(TargetFName)
 String.101.0=
-String.103.0=.\;stm8lib;sensorlib;commlib\i2c;powerlib;commlib\uart1;commlib\uart2;commlib\uart3;pfslib\source;userlib;sensorlib\bme280;
+String.103.0=.\;stm8lib;sensorlib;commlib\i2c;powerlib;commlib\uart1;commlib\uart2;commlib\uart3;pfslib\source;userlib;sensorlib\bme280;commlib;sensorlib\wind;app;sensorlib\cputemp;userlib\blinksequencer;userlib\bthandler;sensorlib\qmc5883;sensorlib\mpu6050;userlib\gpshandler;
 
 [Root.Config.1.Settings.2]
 String.2.0=
@@ -165,7 +165,7 @@ String.100.0=STM8L152R8
 
 [Root.Config.1.Settings.3]
 String.2.0=Compiling $(InputFile)...
-String.3.0=cxstm8 -isensorlib\bme280  +modsl -customC-pp -pp -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
+String.3.0=cxstm8 -iuserlib\gpshandler  -isensorlib\mpu6050  -isensorlib\qmc5883  -iuserlib\bthandler  -iuserlib\blinksequencer  -isensorlib\cputemp  -iapp  -isensorlib\wind  -isensorlib\bme280  +modsl -customC-pp -pp -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
 String.4.0=$(IntermPath)$(InputName).$(ObjectExt)
 String.5.0=$(IntermPath)$(InputName).ls
 String.6.0=2019,10,27,20,51,39
@@ -220,7 +220,7 @@ String.6.0=2019,10,14,21,7,36
 [Root.Source Files]
 ElemType=Folder
 PathName=Source Files
-Child=Root.Source Files.Source Files\commlib
+Child=Root.Source Files.Source Files\app
 Next=Root.Include Files
 Config.0=Root.Source Files.Config.0
 Config.1=Root.Source Files.Config.1
@@ -245,7 +245,7 @@ Int.1=0
 
 [Root.Source Files.Config.0.Settings.1]
 String.2.0=Compiling $(InputFile)...
-String.3.0=cxstm8 -isensorlib\bme280  +modsl -customDebCompat -customOpt-no -customC-pp -customLst -l -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
+String.3.0=cxstm8 -iuserlib\gpshandler  -isensorlib\mpu6050  -isensorlib\qmc5883  -iuserlib\bthandler  -iuserlib\blinksequencer  -isensorlib\cputemp  -iapp  -isensorlib\wind  -isensorlib\bme280  +modsl -customDebCompat -customOpt-no -customC-pp -customLst -l -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
 String.4.0=$(IntermPath)$(InputName).$(ObjectExt)
 String.5.0=$(IntermPath)$(InputName).ls
 String.6.0=2019,10,27,20,51,39
@@ -272,7 +272,7 @@ Int.1=0
 
 [Root.Source Files.Config.1.Settings.1]
 String.2.0=Compiling $(InputFile)...
-String.3.0=cxstm8 -isensorlib\bme280  +modsl -customC-pp -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
+String.3.0=cxstm8 -iuserlib\gpshandler  -isensorlib\mpu6050  -isensorlib\qmc5883  -iuserlib\bthandler  -iuserlib\blinksequencer  -isensorlib\cputemp  -iapp  -isensorlib\wind  -isensorlib\bme280  +modsl -customC-pp -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
 String.4.0=$(IntermPath)$(InputName).$(ObjectExt)
 String.5.0=$(IntermPath)$(InputName).ls
 String.6.0=2019,10,27,20,51,39
@@ -291,11 +291,26 @@ String.4.0=
 String.5.0=
 String.6.0=2019,10,14,21,7,36
 
+[Root.Source Files.Source Files\app]
+ElemType=Folder
+PathName=Source Files\app
+Child=Root.Source Files.Source Files\app.app\app_sensors.h
+Next=Root.Source Files.Source Files\commlib
+
+[Root.Source Files.Source Files\app.app\app_sensors.h]
+ElemType=File
+PathName=app\app_sensors.h
+
 [Root.Source Files.Source Files\commlib]
 ElemType=Folder
 PathName=Source Files\commlib
-Child=Root.Source Files.Source Files\commlib.Source Files\commlib\i2c
+Child=Root.Source Files.Source Files\commlib.commlib\commlib.h
 Next=Root.Source Files.Source Files\motorlib
+
+[Root.Source Files.Source Files\commlib.commlib\commlib.h]
+ElemType=File
+PathName=commlib\commlib.h
+Next=Root.Source Files.Source Files\commlib.Source Files\commlib\i2c
 
 [Root.Source Files.Source Files\commlib.Source Files\commlib\i2c]
 ElemType=Folder
@@ -419,14 +434,128 @@ PathName=powerlib\powerlib.h
 [Root.Source Files.Source Files\sensorlib]
 ElemType=Folder
 PathName=Source Files\sensorlib
-Child=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280
+Child=Root.Source Files.Source Files\sensorlib.sensorlib\sensorlib.h
 Next=Root.Source Files.Source Files\stm8lib
+
+[Root.Source Files.Source Files\sensorlib.sensorlib\sensorlib.h]
+ElemType=File
+PathName=sensorlib\sensorlib.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050]
+ElemType=Folder
+PathName=Source Files\sensorlib\mpu6050
+Child=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050.c
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050.c]
+ElemType=File
+PathName=sensorlib\mpu6050\sensorlib_mpu6050.c
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050.h
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050.h]
+ElemType=File
+PathName=sensorlib\mpu6050\sensorlib_mpu6050.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050_internal.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050_internal.c]
+ElemType=File
+PathName=sensorlib\mpu6050\sensorlib_mpu6050_internal.c
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050_internal.h
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\mpu6050.sensorlib\mpu6050\sensorlib_mpu6050_internal.h]
+ElemType=File
+PathName=sensorlib\mpu6050\sensorlib_mpu6050_internal.h
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883]
+ElemType=Folder
+PathName=Source Files\sensorlib\qmc5883
+Child=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883_internal.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883_internal.h]
+ElemType=File
+PathName=sensorlib\qmc5883\sensorlib_qmc5883_internal.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883_internal.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883_internal.c]
+ElemType=File
+PathName=sensorlib\qmc5883\sensorlib_qmc5883_internal.c
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883.h
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883.h]
+ElemType=File
+PathName=sensorlib\qmc5883\sensorlib_qmc5883.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\qmc5883.sensorlib\qmc5883\sensorlib_qmc5883.c]
+ElemType=File
+PathName=sensorlib\qmc5883\sensorlib_qmc5883.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp]
+ElemType=Folder
+PathName=Source Files\sensorlib\cputemp
+Child=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp_internal.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp_internal.h]
+ElemType=File
+PathName=sensorlib\cputemp\sensorlib_cputemp_internal.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp_internal.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp_internal.c]
+ElemType=File
+PathName=sensorlib\cputemp\sensorlib_cputemp_internal.c
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp.h
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp.h]
+ElemType=File
+PathName=sensorlib\cputemp\sensorlib_cputemp.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\cputemp.sensorlib\cputemp\sensorlib_cputemp.c]
+ElemType=File
+PathName=sensorlib\cputemp\sensorlib_cputemp.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind]
+ElemType=Folder
+PathName=Source Files\sensorlib\wind
+Child=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind_internal.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind_internal.h]
+ElemType=File
+PathName=sensorlib\wind\sensorlib_wind_internal.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind_internal.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind_internal.c]
+ElemType=File
+PathName=sensorlib\wind\sensorlib_wind_internal.c
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind.h
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind.h]
+ElemType=File
+PathName=sensorlib\wind\sensorlib_wind.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\wind.sensorlib\wind\sensorlib_wind.c]
+ElemType=File
+PathName=sensorlib\wind\sensorlib_wind.c
 
 [Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280]
 ElemType=Folder
 PathName=Source Files\sensorlib\bme280
-Child=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280.c
-Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\hmc6352
+Child=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280_internal.h
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280_internal.h]
+ElemType=File
+PathName=sensorlib\bme280\sensorlib_bme280_internal.h
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280_internal.c
+
+[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280_internal.c]
+ElemType=File
+PathName=sensorlib\bme280\sensorlib_bme280_internal.c
+Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280.c
 
 [Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280.c]
 ElemType=File
@@ -436,15 +565,6 @@ Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sens
 [Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\bme280.sensorlib\bme280\sensorlib_bme280.h]
 ElemType=File
 PathName=sensorlib\bme280\sensorlib_bme280.h
-
-[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\hmc6352]
-ElemType=Folder
-PathName=Source Files\sensorlib\hmc6352
-Next=Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\lis3dh
-
-[Root.Source Files.Source Files\sensorlib.Source Files\sensorlib\lis3dh]
-ElemType=Folder
-PathName=Source Files\sensorlib\lis3dh
 
 [Root.Source Files.Source Files\stm8lib]
 ElemType=Folder
@@ -739,8 +859,53 @@ PathName=stm8lib\stm8l15x_wwdg.h
 [Root.Source Files.Source Files\userlib]
 ElemType=Folder
 PathName=Source Files\userlib
-Child=Root.Source Files.Source Files\userlib.Source Files\userlib\SolarTracking
+Child=Root.Source Files.Source Files\userlib.Source Files\userlib\BTHandler
 Next=Root.Source Files.main.c
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\BTHandler]
+ElemType=Folder
+PathName=Source Files\userlib\BTHandler
+Child=Root.Source Files.Source Files\userlib.Source Files\userlib\BTHandler.userlib\bthandler\bthandler.h
+Next=Root.Source Files.Source Files\userlib.Source Files\userlib\BlinkSequencer
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\BTHandler.userlib\bthandler\bthandler.h]
+ElemType=File
+PathName=userlib\bthandler\bthandler.h
+Next=Root.Source Files.Source Files\userlib.Source Files\userlib\BTHandler.userlib\bthandler\bthandler.c
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\BTHandler.userlib\bthandler\bthandler.c]
+ElemType=File
+PathName=userlib\bthandler\bthandler.c
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\BlinkSequencer]
+ElemType=Folder
+PathName=Source Files\userlib\BlinkSequencer
+Child=Root.Source Files.Source Files\userlib.Source Files\userlib\BlinkSequencer.userlib\blinksequencer\blinksequencer.h
+Next=Root.Source Files.Source Files\userlib.Source Files\userlib\GPSHandler
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\BlinkSequencer.userlib\blinksequencer\blinksequencer.h]
+ElemType=File
+PathName=userlib\blinksequencer\blinksequencer.h
+Next=Root.Source Files.Source Files\userlib.Source Files\userlib\BlinkSequencer.userlib\blinksequencer\blinksequencer.c
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\BlinkSequencer.userlib\blinksequencer\blinksequencer.c]
+ElemType=File
+PathName=userlib\blinksequencer\blinksequencer.c
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\GPSHandler]
+ElemType=Folder
+PathName=Source Files\userlib\GPSHandler
+Child=Root.Source Files.Source Files\userlib.Source Files\userlib\GPSHandler.userlib\gpshandler\gpshandler.h
+Next=Root.Source Files.Source Files\userlib.Source Files\userlib\SolarTracking
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\GPSHandler.userlib\gpshandler\gpshandler.h]
+ElemType=File
+PathName=userlib\gpshandler\gpshandler.h
+Next=Root.Source Files.Source Files\userlib.Source Files\userlib\GPSHandler.userlib\gpshandler\gpshandler.c
+
+[Root.Source Files.Source Files\userlib.Source Files\userlib\GPSHandler.userlib\gpshandler\gpshandler.c]
+ElemType=File
+PathName=userlib\gpshandler\gpshandler.c
 
 [Root.Source Files.Source Files\userlib.Source Files\userlib\SolarTracking]
 ElemType=Folder
@@ -791,7 +956,7 @@ Int.1=0
 
 [Root.Include Files.Config.0.Settings.1]
 String.2.0=Compiling $(InputFile)...
-String.3.0=cxstm8 -isensorlib\bme280  +modsl -customDebCompat -customOpt-no -customC-pp -customLst -l -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
+String.3.0=cxstm8 -iuserlib\gpshandler  -isensorlib\mpu6050  -isensorlib\qmc5883  -iuserlib\bthandler  -iuserlib\blinksequencer  -isensorlib\cputemp  -iapp  -isensorlib\wind  -isensorlib\bme280  +modsl -customDebCompat -customOpt-no -customC-pp -customLst -l -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
 String.4.0=$(IntermPath)$(InputName).$(ObjectExt)
 String.5.0=$(IntermPath)$(InputName).ls
 String.6.0=2019,10,27,20,51,39
@@ -818,7 +983,7 @@ Int.1=0
 
 [Root.Include Files.Config.1.Settings.1]
 String.2.0=Compiling $(InputFile)...
-String.3.0=cxstm8 -isensorlib\bme280  +modsl -customC-pp -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
+String.3.0=cxstm8 -iuserlib\gpshandler  -isensorlib\mpu6050  -isensorlib\qmc5883  -iuserlib\bthandler  -iuserlib\blinksequencer  -isensorlib\cputemp  -iapp  -isensorlib\wind  -isensorlib\bme280  +modsl -customC-pp -iuserlib -ipfslib\source -icommlib\uart3 -icommlib\uart2 -icommlib\uart1 -icommlib\uart -ipowerlib -icommlib\i2c -icommlib -iifacelib -isensorlib -istm8lib $(ToolsetIncOpts) -cl$(IntermPath) -co$(IntermPath) $(InputFile)
 String.4.0=$(IntermPath)$(InputName).$(ObjectExt)
 String.5.0=$(IntermPath)$(InputName).ls
 String.6.0=2019,10,27,20,51,39

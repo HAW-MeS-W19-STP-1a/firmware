@@ -24,6 +24,7 @@ extern @far @interrupt void UART1_RxInterruptHandler(void);
 extern @far @interrupt void UART1_TxInterruptHandler(void);
 extern @far @interrupt void UART3_RxInterruptHandler(void);
 extern @far @interrupt void UART3_TxInterruptHandler(void);
+extern @far @interrupt void RTC_InterruptHandler(void);
 
 struct interrupt_vector const _vectab[] = {
 	{0x82, (interrupt_handler_t)_stext}, /* reset */
@@ -32,7 +33,7 @@ struct interrupt_vector const _vectab[] = {
 	{0x82, NonHandledInterrupt}, /* flash  */
 	{0x82, NonHandledInterrupt}, /* dma01  */
 	{0x82, NonHandledInterrupt}, /* dma23  */
-	{0x82, NonHandledInterrupt}, /* rtc  */
+	{0x82, RTC_InterruptHandler}, /* rtc  */
 	{0x82, NonHandledInterrupt}, /* extief/pvd  */
 	{0x82, NonHandledInterrupt}, /* extibg  */
 	{0x82, NonHandledInterrupt}, /* extidh  */
