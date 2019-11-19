@@ -6,6 +6,7 @@
 #include "BTHandler.h"
 #include "GPSHandler.h"
 #include "sensorlib.h"
+#include "motorlib.h"
 #include "pff.h"
 #include <stdio.h>
 #include <stdbool.h>
@@ -110,6 +111,22 @@ void main(void)
   GPSHandler_Init();
   UART3_Init();
   UART3_ReceiveUntilTrig('$', '\r', COMMLIB_UART3RX_MAX_BUF);
+  
+  /* Motor controller                                     */
+  GPIO_Init(GPIOB, GPIO_Pin_0, GPIO_Mode_In_PU_IT); // Nothalt
+  GPIO_Init(GPIOB, GPIO_Pin_3, GPIO_Mode_In_PU_IT); // Limit A
+  GPIO_Init(GPIOB, GPIO_Pin_4, GPIO_Mode_In_PU_IT); // Limit B
+  EXTI_SetPortSensitivity(EXTI_Port_B, EXTI_Trigger_Falling);
+  EXTI_SelectPort(EXTI_Port_B);
+  EXTI_SetHalfPortSelection(EXTI_HalfPort_B_LSB, ENABLE);
+  EXTI_SetHalfPortSelection(EXTI_HalfPort_B_MSB, ENABLE);
+  GPIO_Init(GPIOD, GPIO_Pin_4, GPIO_Mode_Out_PP_Low_Slow); // Motor Power Enable
+  GPIO_Init(GPIOF, GPIO_Pin_4, GPIO_Mode_Out_PP_Low_Slow); // Motor 2, Dir A
+  GPIO_Init(GPIOF, GPIO_Pin_5, GPIO_Mode_Out_PP_Low_Slow); // Motor 2, Dir B
+  GPIO_Init(GPIOF, GPIO_Pin_6, GPIO_Mode_Out_PP_Low_Slow); // Motor 1, Dir A
+  GPIO_Init(GPIOF, GPIO_Pin_7, GPIO_Mode_Out_PP_Low_Slow); // Motor 1, Dir B
+  Motor_Init();
+  Motor_Cmd(true);
   
   /* RTC init                                             */
   CLK_PeripheralClockConfig(CLK_Peripheral_RTC, ENABLE);
@@ -345,6 +362,9 @@ void main(void)
     
   /* Blink Pattern                                        */
   Blink_Poll();
+  
+  /* Lageregelung                                         */
+  Motor_Task100ms();
       
   /* Timer-Zähler und Flags für 1s-Task behandeln         */
   if (iTimer1s > 0)

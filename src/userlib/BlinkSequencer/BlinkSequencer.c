@@ -13,6 +13,7 @@ typedef struct tag_Blink_LedGpio
 volatile Blink_LedGpio asBlinkGPIO[Blink_MaxLed] = 
 {
   {GPIOB, GPIO_Pin_5}, /* SYS LED */
+  {GPIOB, GPIO_Pin_6}, /* MOT LED */
   {GPIOB, GPIO_Pin_7}  /* BT LED */
 };
 
