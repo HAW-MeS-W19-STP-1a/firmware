@@ -16,14 +16,18 @@ In diesem Dokument wird für die in [Pinbeschreibung.pdf](Pinbeschreibung.pdf) a
 * `GPIO_MOT1_B`: Motor 1 Drehrichtungs-Signal B
 * `GPIO_MOT2_A`: Motor 2 Drehrichtungs-Signal A
 * `GPIO_MOT2_B`: Motor 2 Drehrichtungs-Signal B
+* `GPIO_LIM_A`: Endlagenschalter am Panel in Richtung A
+* `GPIO_LIM_B`: Endlagenschalter am Panel in Richtung B
+* `GPIO_STOP`: Nothalt
 * `GPIO_BTN1_BLUE`: Eingang für blauen Taster am Nucleo-Board
 * `BT_STATUS`: Statussignal vom Bluetooth-Modul
 * `BT_CMD`: Auswahl Command-/Communication-Mode am Bluetooth-Modul
 * `BT_PWREN`: Aktivierung der 5V-Spannungsversorgung zum Bluetooth-Modul
 * `GPS_PWREN`: Aktivierung der 5V-Spannungsversorgung zum GPS-Modul
 * `MOT_PWREN`: Aktivierung der 12V-Spannungsversorgung zum Motortreiber
-* `LED_BT`: Bluetooth Status-LED
-* `LED_SYS`: Systemstatus-LED
+* `LED_BT`: Bluetooth Status-LED (Blau)
+* `LED_MOT`: Motorcontrol Status-LED (Gelb)
+* `LED_SYS`: Systemstatus-LED (Grün, auf dem Nucleo-Board)
 * `TIM3_ANEM_CH1`: Timer 3 Zählereingang für Anemometersignal
 * `SYS_SWIM`: ST-Link Debugger- und Programmierschnittstelle
 
