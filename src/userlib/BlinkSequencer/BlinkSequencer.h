@@ -10,6 +10,7 @@
 typedef enum tag_Blink_Led
 {
   Blink_Led_SYS = 0,
+  Blink_Led_MOT,
   Blink_Led_BT,
   Blink_MaxLed
 } Blink_Led;
