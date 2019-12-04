@@ -7,13 +7,16 @@
 #include "GPSHandler.h"
 #include "sensorlib.h"
 #include "motorlib.h"
-#include "pff.h"
+#include "diskio.h"
+#include "ff.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 
 
 /*- Globale Variablen --------------------------------------------------------*/
+bool bDir;
+
 /*! Timer-Zähler für 1s-Task                                                  */
 volatile int iTimer1s = 10;
 
@@ -138,8 +141,44 @@ void main(void)
   RTC_WakeUpCmd(ENABLE);
   RTC_ITConfig(RTC_IT_WUT, ENABLE);
   
+  /* SPI und SD-Karte                                     */
+  GPIO_Init(GPIOG, GPIO_Pin_5, GPIO_Mode_Out_PP_Low_Fast);
+  GPIO_Init(GPIOG, GPIO_Pin_6, GPIO_Mode_Out_PP_Low_Fast);
+  GPIO_Init(GPIOG, GPIO_Pin_7, GPIO_Mode_In_PU_No_IT);
+  GPIO_Init(GPIOG, GPIO_Pin_3, GPIO_Mode_Out_PP_High_Fast);
+  CLK_PeripheralClockConfig(CLK_Peripheral_SPI2, ENABLE);
+  SPI_Init(SPI2, 
+    SPI_FirstBit_MSB, 
+    SPI_BaudRatePrescaler_64, 
+    SPI_Mode_Master, 
+    SPI_CPOL_Low,
+    SPI_CPHA_1Edge, 
+    SPI_Direction_2Lines_FullDuplex,
+    SPI_NSS_Soft,
+    0
+  );
+  SPI_Cmd(SPI2, ENABLE);
+  
+  /* RTC initialisieren                                   */
+  RTC_TimeStructInit(&sTime);
+  sTime.RTC_Hours = 8;
+  sTime.RTC_Minutes = 0;
+  sTime.RTC_Seconds = 0;
+  RTC_SetTime(RTC_Format_BIN, &sTime);
+  RTC_DateStructInit(&sDate);
+  sDate.RTC_Date = 26;
+  sDate.RTC_Month = 11;
+  sDate.RTC_Year = 19;
+  RTC_SetDate(RTC_Format_BIN, &sDate);
+  
   printf("Powerup wait\r\n");
   while (GPIO_ReadInputDataBit(GPIOG, GPIO_Pin_4) != 0);
+  
+  Motor_SetTiltRef(0);
+  Motor_SetTurnRef(0);
+  Motor_SetTurn(450);
+  bDir = true;
+  
   
   /* Enable interrupt execution                           */
   enableInterrupts();
@@ -157,8 +196,86 @@ void main(void)
   Wind_Init(&sSensorWind, 1000); 
   printf(" OK\r\nCPU Temp init...");
   CPUTemp_Init(&sSensorCPUTemp);
-  printf(" OK\r\nDone.\r\n");
+  printf(" OK\r\n");
   I2CMaster_DeInit();
+  
+  printf("SD-Card init...");
+  {
+    FATFS fs;
+    DIR dir;
+    FILINFO fno;
+    FIL fil;
+    char rc;
+    unsigned bw;
+    
+    if (f_mount(&fs, "", 0) == FR_OK)
+    {
+      printf(" OK\r\n  f_open...");
+      
+      if (f_open(&fil, "TEST.CSV", FA_WRITE | FA_CREATE_ALWAYS) == FR_OK)
+      {
+        printf(" OK\r\n  f_write...");
+        f_write(&fil, "Hello World!\r\n", 14, &bw);
+        if ((f_close(&fil) == FR_OK) && (bw == 14))
+        {
+          printf(" OK\r\n");
+        }
+        else
+        {
+          printf(" FAIL\r\n");
+        }
+      }
+      else
+      {
+        printf(" FAIL\r\n");
+      }
+    }
+    else
+    {
+      printf(" FAIL\r\n");
+    }
+    
+    #if 0
+    if (pf_mount(&fs) > 0)
+    {
+      printf(" FAIL\r\n");
+    }
+    else
+    {
+      printf(" OK\r\n");
+      #if 0 /* 1 = list dir, 0 = write file */
+      pf_opendir(&dir, "");
+      for (;;) 
+      {
+        rc = pf_readdir(&dir, &fno);	/* Read a directory item */
+        if (rc || !fno.fname[0]) break;	/* Error or end of dir */
+        if (fno.fattrib & AM_DIR)
+          printf("   <dir>  %s\r\n", fno.fname);
+        else
+          printf("%8lu  %s\r\n", fno.fsize, fno.fname);
+      }
+      #else
+      printf("    pf_open");
+      if (pf_open("TEST.CSV") == 0)
+      {
+        unsigned int bw;
+        
+        printf(" OK\r\n    pf_write");
+        do {
+          rc = pf_write("Test1234", 14, &bw);
+        } while (rc || !bw);
+        pf_write(0, 0, &bw);
+        printf(" OK\r\n");
+      }
+      else
+      {
+        printf(" FAIL\r\n");
+      }
+      #endif
+      printf(" COMPLETE\r\n");
+    }
+    #endif
+  }
   
   while (1)
   {
@@ -168,6 +285,7 @@ void main(void)
       printf("Task1s\r\n");
       
       Wind_Update(&sSensorWind);
+      printf("Pos Tilt=%d, Turn=%d\r\n", Motor_GetTilt(), Motor_GetTurn());
       
       BTHandler_Task1s();
       if (Blink_Ready(Blink_Led_SYS))
@@ -181,6 +299,11 @@ void main(void)
       bTaskWakeupFlag = false;
       printf("TaskWakeup\r\n");
       Blink_SetPattern(Blink_Led_SYS, 0x005F);
+      
+      if (Motor_IsTurnReached())
+      {
+        Motor_SetTurn(bDir ? 0 : 450);
+      }
       
       I2CMaster_Init();
       BME280_Update(&sSensorBME280);   
@@ -196,6 +319,31 @@ void main(void)
     BTHandler_Poll();
     
     /* User Interface                                     */
+    #if 0
+    if (UART1_IsRxReady())
+    {
+      if (UART1_GetRxCount() >= 2)
+      {
+        UART1_FlushTx();
+        else if (strncmp(&aucUart1RxBuf[0], "AT", 2) == 0)
+        {
+          /* Start gültig - ATCMD prüfen                    */
+          if (strncmp(&aucUart1RxBuf[3], "CTEMP", 5) == 0)
+          {
+            /* Temperatursensor                             */
+            if (aucUart1RxBuf[8] == '?')
+            {
+              sprintf((volatile char*)aucUart1TxBuf, "AT+CTEMP=<BME280_cC>,<CPU_C>,<QMC>");
+            }
+          }
+        }
+        sprintf((volatile char*)aucUart1TxBuf, "OK\r\n");
+      }
+      
+      UART1_FlushRx();
+      UART1_ReceiveUntil('\r', COMMLIB_UART1_MAX_BUF);
+    }
+    #else
     if (UART1_IsRxReady())
     {
       if (BTHandler_IsActive() && (UART1_GetRxCount() > 0))
@@ -258,8 +406,8 @@ void main(void)
               sDate.RTC_Date,
               sTime.RTC_Hours + (sTime.RTC_Minutes / 60.0) + (sTime.RTC_Seconds / 3600.0),
               0,
-              sSensorGPS.sPosition.lLat / 1000000.0,
-              sSensorGPS.sPosition.lLong / 1000000.0,
+              53.5563 /*sSensorGPS.sPosition.lLat / 1000000.0*/,
+              10.0226 /*sSensorGPS.sPosition.lLong / 1000000.0*/,
               &azimuth,
               &zenith
             );
@@ -280,8 +428,8 @@ void main(void)
               sDate.RTC_Month,
               sDate.RTC_Date,
               0,
-              sSensorGPS.sPosition.lLat / 1000000.0,
-              sSensorGPS.sPosition.lLong / 1000000.0,
+              53.5563 /*sSensorGPS.sPosition.lLat / 1000000.0*/,
+              10.0226 /*sSensorGPS.sPosition.lLong / 1000000.0*/,
               90,
               90,
               &sunrise,
@@ -307,6 +455,12 @@ void main(void)
             vReset();
           }
           break;
+          
+          case 'u':
+          {
+            
+          }
+          break;
             
           default:
             sprintf((volatile char*)aucUart1TxBuf, "ERROR_: Invalid input. Type '?' for help\r\n");
@@ -316,6 +470,7 @@ void main(void)
       UART1_FlushRx();
       UART1_Receive(1);
     }
+    #endif 
     
     /* NMEA-Sentences vom GPS-Modul parsen                */
     if (GPSHandler_Poll())
@@ -346,7 +501,7 @@ void main(void)
     }
         
     /* Fertig - auf nächsten Interrupt warten             */
-    wfi();
+    /*wfi();*/
   }
 }
 
