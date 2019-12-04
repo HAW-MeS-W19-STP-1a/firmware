@@ -22,6 +22,11 @@
 
 
 /*- Typdefinitionen ----------------------------------------------------------*/
+static int16_t abs(int16_t i)
+{
+  return (i < 0) ? -i : i;
+}
+
 /*!****************************************************************************
  * @brief
  * Optionen für die Drehrichtungsvorgabe
@@ -85,7 +90,7 @@ static void Motor_CmdTilt(Motor_Direction eDir)
     {
       case Motor_Direction_A:
         /* Endlagenschalter für Drehrichtung A auswerten  */
-        if (!(ucLimitHit & MOT_LIM_A))
+        if (ucLimitHit & MOT_LIM_A)
         {
           GPIO_WriteBit(GPIOF, GPIO_Pin_7, true);
           GPIO_WriteBit(GPIOF, GPIO_Pin_6, false);
@@ -94,7 +99,7 @@ static void Motor_CmdTilt(Motor_Direction eDir)
         
       case Motor_Direction_B:
         /* Endlagenschalter für Drehrichtung B auswerten  */
-        if (!(ucLimitHit & MOT_LIM_B))
+        if (ucLimitHit & MOT_LIM_B)
         {
           GPIO_WriteBit(GPIOF, GPIO_Pin_7, false);
           GPIO_WriteBit(GPIOF, GPIO_Pin_6, true);
@@ -164,7 +169,7 @@ static void Motor_HomingTask(void)
   {
     /* Aktuellen Zustand der Endlagenschalter auswerten   *
      * und mit eventuellem Ergebnis aus ISR verodern      */
-    uint8_t ucLimitState = (GPIO_ReadInputData(GPIOB) & 0x18) | ucLimitHit;
+    uint8_t ucLimitState = (~GPIO_ReadInputData(GPIOB) & 0x18) | ucLimitHit;
     
     /* Endlagenschalterzustand auswerten                  */
     if (ucLimitState)
@@ -173,7 +178,7 @@ static void Motor_HomingTask(void)
       bHomingActive = false;
       Motor_CmdTilt(Motor_Direction_Stop);
       
-      if (ucLimitState & MOT_LIM_B)
+      if (!(ucLimitState & MOT_LIM_B))
       {
         /* Endlagenschalter am B-Ende ausgelöst           */
         iTiltAct = 0;
@@ -353,6 +358,7 @@ void Motor_SetTilt(int16_t iSetpoint)
 void Motor_SetTiltRef(int16_t iActval)
 {
   iTiltAct = iActval;
+  bHomingActive = false;
 }
 
 /*!****************************************************************************
@@ -387,7 +393,7 @@ void Motor_Task100ms(void)
  ******************************************************************************/
 @far @interrupt void Motor_LimitInterruptHandler(void)
 {
-  register uint8_t ucInBuf = GPIO_ReadInputData(GPIOB);
+  register uint8_t ucInBuf = ~GPIO_ReadInputData(GPIOB);
   
   EXTI_ClearITPendingBit(EXTI_IT_PortB);
   
@@ -415,4 +421,26 @@ void Motor_Task100ms(void)
   
   /* Endlagenschalterposition speichern                   */
   ucLimitHit = ucInBuf & 0x18;
+}
+
+int16_t Motor_GetTurn(void)
+{
+  return iTurnAct;
+}
+
+int16_t Motor_GetTilt(void)
+{
+  return iTiltAct;
+}
+
+bool Motor_IsTurnReached(void)
+{
+  int16_t iDelta = iTurnSet - iTurnAct;
+  return (abs(iDelta) <= MOTORLIB_MIN_ANGLE);
+}
+
+bool Motor_IsTiltReached(void)
+{
+  int16_t iDelta = iTiltSet - iTiltAct;
+  return (abs(iDelta) <= MOTORLIB_MIN_ANGLE);
 }
