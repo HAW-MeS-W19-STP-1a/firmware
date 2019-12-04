@@ -50,6 +50,8 @@ void BTHandler_Poll(void)
       printf("BTHandler CONN\r\n");
       Blink_SetPattern(Blink_Led_BT, USERLIB_BTHANDLER_LED_ON);
       eState = BTHandler_State_CONNECTED;
+      UART1_FlushRx();
+      UART1_ReceiveUntil('\r', COMMLIB_UART1_MAX_BUF);
     }
   }
   else

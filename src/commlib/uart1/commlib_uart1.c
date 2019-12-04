@@ -76,6 +76,7 @@ void UART1_Init(void)
   USART_Init(USART1, 9600, USART_WordLength_8b, USART_StopBits_1, USART_Parity_No, USART_Mode_Rx | USART_Mode_Tx);
   USART_ClearFlag(USART1, USART_FLAG_FE);
   USART_Cmd(USART1, ENABLE);
+  USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
   
   /* Interne Zustandsvariablen initialisieren             */
   ucUart1TxCtr = 0;
@@ -149,6 +150,7 @@ void UART1_SendUntil(char cEndMarker, uint8_t ucMaxLength)
  ******************************************************************************/
 void UART1_Receive(uint8_t ucLength)
 {
+  USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
   eUart1RxMode = UART1_Mode_LENGTH;
   cUart1RxEndChar = '\0';
   ucUart1RxCtr = 0;
@@ -168,6 +170,7 @@ void UART1_Receive(uint8_t ucLength)
  ******************************************************************************/
 void UART1_ReceiveUntil(char cEndMarker, uint8_t ucMaxLength)
 {
+  USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
   eUart1RxMode = UART1_Mode_CHAR;
   cUart1RxEndChar = cEndMarker;
   ucUart1RxCtr = 0;
@@ -304,7 +307,17 @@ void UART1_FlushTx(void)
   switch (eUart1RxMode)
   {
     case UART1_Mode_CHAR:
-      if ((ucUart1RxCtr < ucUart1RxLen) && ((char)ucRxData != cUart1RxEndChar))
+      if (ucUart1RxCtr < ucUart1RxLen)
+      {
+        aucUart1RxBuf[ucUart1RxCtr] = ucRxData;
+        ++ucUart1RxCtr;
+      }
+      if (((char)ucRxData == cUart1RxEndChar) || (ucUart1RxCtr >= ucUart1RxLen))
+      {
+        eUart1RxMode = UART1_Mode_IDLE;
+      }
+      break;
+      /*if ((ucUart1RxCtr < ucUart1RxLen) && ((char)ucRxData != cUart1RxEndChar))
       {
         aucUart1RxBuf[ucUart1RxCtr] = ucRxData;
         ++ucUart1RxCtr;
@@ -320,10 +333,20 @@ void UART1_FlushTx(void)
         eUart1RxMode = UART1_Mode_IDLE;
         USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
       }
-      break;
+      break;*/
     
     case UART1_Mode_LENGTH:
       if (ucUart1RxCtr < ucUart1RxLen)
+      {
+        aucUart1RxBuf[ucUart1RxCtr] = ucRxData;
+        ++ucUart1RxCtr;
+      }
+      if (ucUart1RxCtr >= ucUart1RxLen)
+      {
+        eUart1RxMode = UART1_Mode_IDLE;
+      }
+      break;
+      /*if (ucUart1RxCtr < ucUart1RxLen)
       {
         aucUart1RxBuf[ucUart1RxCtr] = USART_ReceiveData8(USART1);
         ++ucUart1RxCtr;
@@ -339,10 +362,10 @@ void UART1_FlushTx(void)
         eUart1RxMode = UART1_Mode_IDLE;
         USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
       }
-      break;
+      break;*/
     
-    case UART1_Mode_IDLE:
     default:
-      USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+      //USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+      ;
   }
 }
