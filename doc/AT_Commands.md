@@ -9,6 +9,7 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 5. [`AT+CWIND` Wind](#atcwind-wind)
 6. [`AT+CALIGN` Ausrichtung des Solarpanels](#atcalign-ausrichtung-des-solarpanels)
 7. [`AT+CGNSPOS` GPS Position](#atcgnspos-gps-position)
+8. [`AT+CINTV` Messintervall](#atcintv-messintervall)
 
 ## `AT+CTEMP` Temperatur
 * Read-only
@@ -27,7 +28,7 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 | Name    | Beschreibung                                                    |
 |---------|-----------------------------------------------------------------|
 | `<bme>` | Temperaturmesswert vom BME280 in 0.01 °C. Bevorzugter Messwert. |
-| `<cpu>` | Temperaturmesswert vom On-Die Temperatursensor in 0.01 °C       |
+| `<cpu>` | Temperaturmesswert vom On-Die Temperatursensor in 1 °C          |
 | `<qmc>` | Temperaturmesswert vom QMC5883 in 0.01 °C                       |
 | `<mpu>` | Temperaturmesswert vom MPU6050 in 0.01 °C. Unzuverlässig        |
 
@@ -137,7 +138,7 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 ### Test Command
 | Eingabe        | Ausgabe                                                    |
 |----------------|------------------------------------------------------------|
-| `AT+CGNSPOS=?` | `+CGNSPOS: <-90.0000-90.0000>,<-180.0000-180.0000>,<0-9999.9>`<br>`OK` |
+| `AT+CGNSPOS=?` | `+CGNSPOS: <-90000000-90000000>,<-180000000-180000000>,<-3276.8-3276.7>`<br>`OK` |
 
 ### Read Command
 | Eingabe       | Ausgabe                               |
@@ -152,6 +153,41 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 ### Parameter
 | Name    | Beschreibung                                                   |
 |---------|----------------------------------------------------------------|
-| `<lat>` | Breitengrad (Latitude) in 0.0001 °. S mit negativem Vorzeichen |
-| `<lon>` | Längengrad (Longitude) in 0.0001 °. W mit negativem Vorzeichen |
+| `<lat>` | Breitengrad (Latitude) in 1 µ°. S mit negativem Vorzeichen     |
+| `<lon>` | Längengrad (Longitude) in 1 µ°. W mit negativem Vorzeichen     |
 | `<alt>` | Höhe über MSL in 0.1 m.                                        |
+
+## `AT+CINTV` Messintervall
+
+### Test Command
+| Eingabe      | Ausgabe                   |
+|--------------|---------------------------|
+| `AT+CINTV=?` | `+CINTV: 10-3600`<br>`OK` |
+
+### Read Command
+| Eingabe     | Ausgabe                 |
+|-------------|-------------------------|
+| `AT+CINTV?` | `+CINTV: <int>`<br>`OK` |
+
+### Write Command
+| Eingabe          | Ausgabe |
+|------------------|---------|
+| `AT+CINTV=<int>` | `OK`    |
+
+### Parameter
+| Name    | Beschreibung         |
+|---------|----------------------|
+| `<int>` | Messintervall in 1 s |
+
+## `AT+CGUI` Datensatz für UI ausgeben
+* Read-only
+
+### Test Command
+| Eingabe     | Ausgabe |
+|-------------|---------|
+| `AT+CGUI=?` | `OK`    |
+
+### Read Command
+| Eingabe    | Ausgabe                                                        |
+|------------|----------------------------------------------------------------|
+| `AT+CGUI?` | `+CGUI: <yy>,<MM>,<dd>,<hh>,<mm>,<ss>,<t_bme>,<t_cpu>,<t_qmc>,<t_mpu>,<w_dir>,<w_spd>,<pres>,<hum>,<zen>,<azm>,<lat>,<lon>,<alt>,<v_bat>,<i_bat>,<v_solar>,<i_solar>,<v_5v>`<br>`OK` |
