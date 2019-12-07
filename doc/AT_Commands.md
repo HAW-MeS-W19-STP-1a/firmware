@@ -9,7 +9,10 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 5. [`AT+CWIND` Wind](#atcwind-wind)
 6. [`AT+CALIGN` Ausrichtung des Solarpanels](#atcalign-ausrichtung-des-solarpanels)
 7. [`AT+CGNSPOS` GPS Position](#atcgnspos-gps-position)
-8. [`AT+CINTV` Messintervall](#atcintv-messintervall)
+8. [`AT+CPWR` Leistungswerte](#atcpwr-leistungswerte)
+9. [`AT+CINTV` Messintervall](#atcintv-messintervall)
+10. [`AT+CGUI` Datensatz für UI ausgeben](#atcgui-datensatz-fur-ui-ausgeben)
+11. [`AT+CWKUP` Wakeup Task](#atcwkup-wakeup-task)
 
 ## `AT+CTEMP` Temperatur
 * Read-only
@@ -72,9 +75,9 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 * Read-only
 
 ### Test Command
-| Eingabe      | Ausgabe                          |
-|--------------|----------------------------------|
-| `AT+CWIND=?` | `+CWIND: <0-13>,<0-999>`<br>`OK` |
+| Eingabe      | Ausgabe |
+|--------------|---------|
+| `AT+CWIND=?` | `OK`    |
 
 ### Read Command
 | Eingabe     | Ausgabe                       |
@@ -100,6 +103,8 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 | `AT+CTIME?` | `+CTIME: <YY>,<MM>,<DD>,<hh>,<mm>,<ss>`<br>`OK` |
 
 ### Write Command
+Legt das aktuelle Datum und die Uhrzeit in UTC fest.
+
 | Eingabe                                  | Ausgabe |
 |------------------------------------------|---------|
 | `AT+CTIME=<YY>,<MM>,<DD>,<hh>,<mm>,<ss>` | `OK`    |
@@ -136,9 +141,9 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 ## `AT+CGNSPOS` GPS Position
 
 ### Test Command
-| Eingabe        | Ausgabe                                                    |
-|----------------|------------------------------------------------------------|
-| `AT+CGNSPOS=?` | `+CGNSPOS: <-90000000-90000000>,<-180000000-180000000>,<-3276.8-3276.7>`<br>`OK` |
+| Eingabe        | Ausgabe                                        |
+|----------------|------------------------------------------------|
+| `AT+CGNSPOS=?` | `+CGNSPOS: <-90.0000-90.0000>,<-180.0000-180.0000>,<-3276.8-3276.7>`<br>`OK` |
 
 ### Read Command
 | Eingabe       | Ausgabe                               |
@@ -146,6 +151,8 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 | `AT+CGNSPOS?` | `+CGNSPOS: <lat>,<lon>,<alt>`<br>`OK` |
 
 ### Write Command
+Überschreibt die GPS-Position für Demo-Anwendungen.
+
 | Eingabe                          | Ausgabe |
 |----------------------------------|---------|
 | `AT+CGNSPOS=<lat>,<lon>[,<alt>]` | `OK`    |
@@ -153,9 +160,31 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 ### Parameter
 | Name    | Beschreibung                                                   |
 |---------|----------------------------------------------------------------|
-| `<lat>` | Breitengrad (Latitude) in 1 µ°. S mit negativem Vorzeichen     |
-| `<lon>` | Längengrad (Longitude) in 1 µ°. W mit negativem Vorzeichen     |
+| `<lat>` | Breitengrad (Latitude) in 0.0001 °. S mit negativem Vorzeichen |
+| `<lon>` | Längengrad (Longitude) in 0.0001 °. W mit negativem Vorzeichen |
 | `<alt>` | Höhe über MSL in 0.1 m.                                        |
+
+## `AT+CPWR` Leistungswerte
+* Read-only
+
+### Test Command
+| Eingabe     | Ausgabe |
+|-------------|---------|
+| `AT+CPWR=?` | `OK`    |
+
+### Read Command
+| Eingabe    | Ausgabe                                                      |
+|------------|--------------------------------------------------------------|
+| `AT+CPWR?` | `+CPWR: <v_bat>,<i_bat>,<v_solar>,<i_solar>,<v_sys>`<br>`OK` |
+
+### Parameter
+| Name        | Beschreibung                      |
+|-------------|-----------------------------------|
+| `<v_bat>`   | Spannung an der Bleizelle in 1 mV |
+| `<i_bat>`   | Lade-/Entladestrom in 1 mA        |
+| `<v_solar>` | Solarzellenspannung in 1 mV       |
+| `<i_solar>` | Strom von Solarzelle in 1 mA      |
+| `<v_sys>`   | System-Versorgungsspannung in mV  |
 
 ## `AT+CINTV` Messintervall
 
@@ -170,6 +199,8 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 | `AT+CINTV?` | `+CINTV: <int>`<br>`OK` |
 
 ### Write Command
+Setzt den Wakeup-Timer auf die angegebene Dauer zurück.
+
 | Eingabe          | Ausgabe |
 |------------------|---------|
 | `AT+CINTV=<int>` | `OK`    |
@@ -188,6 +219,22 @@ Befehlsreferenz für die Bluetooth-Kommunikation mit der Wetterstation. **Zeilen
 | `AT+CGUI=?` | `OK`    |
 
 ### Read Command
+Gibt alle Datensätze seit dem letzten Aufruf von `AT+CGUI` aus.
+
 | Eingabe    | Ausgabe                                                        |
 |------------|----------------------------------------------------------------|
-| `AT+CGUI?` | `+CGUI: <yy>,<MM>,<dd>,<hh>,<mm>,<ss>,<t_bme>,<t_cpu>,<t_qmc>,<t_mpu>,<w_dir>,<w_spd>,<pres>,<hum>,<zen>,<azm>,<lat>,<lon>,<alt>,<v_bat>,<i_bat>,<v_solar>,<i_solar>,<v_5v>`<br>`OK` |
+| `AT+CGUI?` | `+CGUI: <yy>,<MM>,<dd>,<hh>,<mm>,<ss>,<t_bme>,<t_cpu>,<t_qmc>,<t_mpu>,<w_dir>,<w_spd>,<pres>,<hum>,<zen>,<azm>,<lat>,<lon>,<alt>,<v_bat>,<i_bat>,<v_solar>,<i_solar>,<v_sys>`<br>`+CGUI: ...`<br>`OK` |
+
+## `AT+CWKUP` Wakeup Task
+
+### Test Command
+| Eingabe      | Ausgabe |
+|--------------|---------|
+| `AT+CWKUP=?` | `OK`    |
+
+### Execute Command
+Messwerte werden neu eingelesen und das Panel neu ausgerichtet.
+
+| Eingabe    | Ausgabe |
+|------------|---------|
+| `AT+CWKUP` | `OK`    |

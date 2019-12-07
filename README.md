@@ -42,19 +42,7 @@ Die blaue LED (an Pin B7) zeigt den Zustand des Bluetooth-Moduls an:
 * Datenbits: 8
 
 **Benutzer-Interface:**
-Über die Bluetooth-Verbindung kann auf ein textbasiertes Interface zugegriffen werden. Es werden derzeit Einzelzeichen-Befehle ausgewertet. Eine Übersicht mit unterstützten Befehlen wird bei Eingabe von `?` ausgegeben:
-```
-HELP__:
-        t = Temperature
-        w = Wind
-        p = Pressure
-        h = Humidity
-        g = GPS data
-        d = Date/Time from RTC
-        z = Sun Zenith/Azimuth
-        s = SR/SS
-        r = Reset
-```
+Über die Bluetooth-Verbindung wird eine AT+Befehlsschnittstelle zur Auswertung der Sensoren und Konfiguration der Wetterstation bereitgestellt. Die unterstützten Befehle sind in der [AT-Befehlsreferenz](doc/AT_Commands.md) aufgelistet.
 
 ### Debug-Schnittstelle
 Zusätzliche Debug-Meldungen werden über die serielle Schnittstelle des ST-Link Programmers ausgegeben. Eine Eingabe von Daten über die Debug-Schnittstelle ist nicht vorgesehen.
