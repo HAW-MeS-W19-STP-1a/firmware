@@ -187,16 +187,12 @@ Legt das aktuelle Datum und die Uhrzeit in UTC fest.
 | `<v_sys>`   | System-Versorgungsspannung in mV  |
 
 ## `AT+CINTV` Messintervall
+* Write-only
 
 ### Test Command
 | Eingabe      | Ausgabe                   |
 |--------------|---------------------------|
 | `AT+CINTV=?` | `+CINTV: 10-3600`<br>`OK` |
-
-### Read Command
-| Eingabe     | Ausgabe                 |
-|-------------|-------------------------|
-| `AT+CINTV?` | `+CINTV: <int>`<br>`OK` |
 
 ### Write Command
 Setzt den Wakeup-Timer auf die angegebene Dauer zurück.
