@@ -4,6 +4,7 @@
 #include "SolarTracking.h"
 #include "BlinkSequencer.h"
 #include "BTHandler.h"
+#include "ATCmd.h"
 #include "GPSHandler.h"
 #include "sensorlib.h"
 #include "motorlib.h"
@@ -106,6 +107,7 @@ void main(void)
   
   /* Bluetooth UART TX and RX                             */
   BTHandler_Init();
+  ATCmd_Init();
   
   /* NMEA Input, Binary CMD output                        */
   GPIO_Init(GPIOG, GPIO_Pin_0, GPIO_Mode_In_FL_No_IT);
@@ -171,8 +173,8 @@ void main(void)
   sDate.RTC_Year = 19;
   RTC_SetDate(RTC_Format_BIN, &sDate);
   
-  printf("Powerup wait\r\n");
-  while (GPIO_ReadInputDataBit(GPIOG, GPIO_Pin_4) != 0);
+  //printf("Powerup wait\r\n");
+  //while (GPIO_ReadInputDataBit(GPIOG, GPIO_Pin_4) != 0);
   
   Motor_SetTiltRef(0);
   Motor_SetTurnRef(0);
@@ -199,6 +201,7 @@ void main(void)
   printf(" OK\r\n");
   I2CMaster_DeInit();
   
+  #ifdef FATFS_DEMO
   printf("SD-Card init...");
   {
     FATFS fs;
@@ -234,48 +237,8 @@ void main(void)
     {
       printf(" FAIL\r\n");
     }
-    
-    #if 0
-    if (pf_mount(&fs) > 0)
-    {
-      printf(" FAIL\r\n");
-    }
-    else
-    {
-      printf(" OK\r\n");
-      #if 0 /* 1 = list dir, 0 = write file */
-      pf_opendir(&dir, "");
-      for (;;) 
-      {
-        rc = pf_readdir(&dir, &fno);	/* Read a directory item */
-        if (rc || !fno.fname[0]) break;	/* Error or end of dir */
-        if (fno.fattrib & AM_DIR)
-          printf("   <dir>  %s\r\n", fno.fname);
-        else
-          printf("%8lu  %s\r\n", fno.fsize, fno.fname);
-      }
-      #else
-      printf("    pf_open");
-      if (pf_open("TEST.CSV") == 0)
-      {
-        unsigned int bw;
-        
-        printf(" OK\r\n    pf_write");
-        do {
-          rc = pf_write("Test1234", 14, &bw);
-        } while (rc || !bw);
-        pf_write(0, 0, &bw);
-        printf(" OK\r\n");
-      }
-      else
-      {
-        printf(" FAIL\r\n");
-      }
-      #endif
-      printf(" COMPLETE\r\n");
-    }
-    #endif
   }
+  #endif /* FATFS_DEMO */
   
   while (1)
   {
@@ -285,7 +248,7 @@ void main(void)
       printf("Task1s\r\n");
       
       Wind_Update(&sSensorWind);
-      printf("Pos Tilt=%d, Turn=%d\r\n", Motor_GetTilt(), Motor_GetTurn());
+      //printf("Pos Tilt=%d, Turn=%d\r\n", Motor_GetTilt(), Motor_GetTurn());
       
       BTHandler_Task1s();
       if (Blink_Ready(Blink_Led_SYS))
@@ -316,161 +279,9 @@ void main(void)
       GPSHandler_TaskWakeup();
     }
     
+    /* Bluetooth Verbindung und AT-Commands verarbeiten   */
     BTHandler_Poll();
-    
-    /* User Interface                                     */
-    #if 0
-    if (UART1_IsRxReady())
-    {
-      if (UART1_GetRxCount() >= 2)
-      {
-        UART1_FlushTx();
-        else if (strncmp(&aucUart1RxBuf[0], "AT", 2) == 0)
-        {
-          /* Start gültig - ATCMD prüfen                    */
-          if (strncmp(&aucUart1RxBuf[3], "CTEMP", 5) == 0)
-          {
-            /* Temperatursensor                             */
-            if (aucUart1RxBuf[8] == '?')
-            {
-              sprintf((volatile char*)aucUart1TxBuf, "AT+CTEMP=<BME280_cC>,<CPU_C>,<QMC>");
-            }
-          }
-        }
-        sprintf((volatile char*)aucUart1TxBuf, "OK\r\n");
-      }
-      
-      UART1_FlushRx();
-      UART1_ReceiveUntil('\r', COMMLIB_UART1_MAX_BUF);
-    }
-    #else
-    if (UART1_IsRxReady())
-    {
-      if (BTHandler_IsActive() && (UART1_GetRxCount() > 0))
-      {
-        printf("Bluetooth RX\r\n");
-        UART1_FlushTx();
-        switch (aucUart1RxBuf[0])
-        {
-          case '?':
-            sprintf((volatile char*)aucUart1TxBuf, "HELP__:\r\n\tt = Temperature\r\n\tw = Wind\r\n\tp = Pressure\r\n\th = Humidity\r\n");
-            UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
-            while(!UART1_IsTxReady());
-            UART1_FlushTx();
-            sprintf((volatile char*)aucUart1TxBuf, "\tg = GPS data\r\n\td = Date/Time from RTC\r\n\ta = Alignment\r\n");
-            UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
-            while(!UART1_IsTxReady());
-            UART1_FlushTx();
-            sprintf((volatile char*)aucUart1TxBuf, "\tz = Sun Zenith/Azimuth\r\n\ts = SR/SS\r\n\tr = Reset\r\n");
-            break;
-            
-          case 't':
-            sprintf((volatile char*)aucUart1TxBuf, "TEMP__: BME=%d MCU=%d QMC=%d MPU=%d\r\n", sSensorBME280.sMeasure.iTemperature, (int16_t)sSensorCPUTemp.sMeasure.cTemp, sSensorQMC5883.sMeasure.iTemperature, sSensorMPU6050.sMeasure.iTemperature);
-            break;
-            
-          case 'h':
-            sprintf((volatile char*)aucUart1TxBuf, "HUMID_: BME=%ld\r\n", sSensorBME280.sMeasure.ulHumidity);
-            break;
-            
-          case 'p':
-            sprintf((volatile char*)aucUart1TxBuf, "PRESS_: BME=%ld\r\n", sSensorBME280.sMeasure.ulPressure);
-            break;
-            
-          case 'w':
-            sprintf((volatile char*)aucUart1TxBuf, "WIND__: SPD=%d DIR=%d\r\n", sSensorWind.sMeasure.uiVelocity, (int)sSensorWind.sMeasure.eDirection);
-            break;
-            
-          case 'a':
-            sprintf((volatile char*)aucUart1TxBuf, "ALIGN_: AZM=%d ZEN_XZ=%d ZEN_YZ=%d\r\n", sSensorQMC5883.sMeasure.uiAzimuth, sSensorMPU6050.sMeasure.sAngle.iXZ, sSensorMPU6050.sMeasure.sAngle.iYZ);
-            break;
-            
-          case 'g':
-            sprintf((volatile char*)aucUart1TxBuf, "GPS___: LAT=%ld LON=%ld ALT=%d\r\n", sSensorGPS.sPosition.lLat, sSensorGPS.sPosition.lLong, sSensorGPS.sPosition.iAlt);
-            break;
-            
-          case 'd':
-            RTC_GetDate(RTC_Format_BIN, &sDate);
-            RTC_GetTime(RTC_Format_BIN, &sTime);
-            sprintf((volatile char*)aucUart1TxBuf, "RTC___: DATE=%02d.%02d.%02d TIME=%02d:%02d:%02d\r\n", (unsigned int)sDate.RTC_Date, (unsigned int)sDate.RTC_Month, (unsigned int)sDate.RTC_Year, (unsigned int)sTime.RTC_Hours, (unsigned int)sTime.RTC_Minutes, (unsigned int)sTime.RTC_Seconds);
-            break;
-            
-          case 'z':
-          {
-            double zenith, azimuth;
-            int iZenith, iAzimuth;
-            RTC_GetDate(RTC_Format_BIN, &sDate);
-            RTC_GetTime(RTC_Format_BIN, &sTime);
-            calculate_current_sun_position(
-              2000+sDate.RTC_Year,
-              sDate.RTC_Month,
-              sDate.RTC_Date,
-              sTime.RTC_Hours + (sTime.RTC_Minutes / 60.0) + (sTime.RTC_Seconds / 3600.0),
-              0,
-              53.5563 /*sSensorGPS.sPosition.lLat / 1000000.0*/,
-              10.0226 /*sSensorGPS.sPosition.lLong / 1000000.0*/,
-              &azimuth,
-              &zenith
-            );
-            iZenith = zenith;
-            iAzimuth = azimuth;
-            sprintf((volatile char*)aucUart1TxBuf, "TRACK_: ZEN=%d AZM=%d\r\n", iZenith, iAzimuth);
-            break;
-          }
-          
-          case 's':
-          {
-            double sunrise, sunset;
-            int iSunriseHour, iSunsetHour, iSunriseMin, iSunsetMin;
-            RTC_GetDate(RTC_Format_BIN, &sDate);
-            RTC_GetTime(RTC_Format_BIN, &sTime);
-            calculate_sunrise_and_fall(
-              2000+sDate.RTC_Year,
-              sDate.RTC_Month,
-              sDate.RTC_Date,
-              0,
-              53.5563 /*sSensorGPS.sPosition.lLat / 1000000.0*/,
-              10.0226 /*sSensorGPS.sPosition.lLong / 1000000.0*/,
-              90,
-              90,
-              &sunrise,
-              &sunset
-            );
-            iSunriseHour = sunrise;
-            iSunriseMin = (sunrise - iSunriseHour) * 60;
-            iSunsetHour = sunset;
-            iSunsetMin = (sunset - iSunsetHour) * 60;
-            sprintf((volatile char*)aucUart1TxBuf, "TRACK_: SR=%02d:%02d SS=%02d:%02d\r\n", iSunriseHour, iSunriseMin, iSunsetHour, iSunsetMin);
-            break;
-          }
-          break;
-          
-          case 'r':
-          {
-            typedef void (*funcptr)(void);
-            funcptr vReset = (funcptr)0x08000;
-            printf("ResetCmd");
-            sprintf((volatile char*)aucUart1TxBuf, "RESET_: OK\r\n");
-            UART1_SendUntil('\r', COMMLIB_UART1_MAX_BUF);
-            while (!UART1_IsTxReady());
-            vReset();
-          }
-          break;
-          
-          case 'u':
-          {
-            
-          }
-          break;
-            
-          default:
-            sprintf((volatile char*)aucUart1TxBuf, "ERROR_: Invalid input. Type '?' for help\r\n");
-        }
-        UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
-      }
-      UART1_FlushRx();
-      UART1_Receive(1);
-    }
-    #endif 
+    ATCmd_Poll();
     
     /* NMEA-Sentences vom GPS-Modul parsen                */
     if (GPSHandler_Poll())
@@ -501,7 +312,7 @@ void main(void)
     }
         
     /* Fertig - auf nächsten Interrupt warten             */
-    /*wfi();*/
+    wfi();
   }
 }
 
