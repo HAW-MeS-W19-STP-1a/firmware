@@ -9,6 +9,7 @@
  
 /*- Headerdateien ------------------------------------------------------------*/
 #include "stm8l15x.h"
+#include "io_map.h"
 #include "BlinkSequencer.h"
 #include "motorlib.h"
 
@@ -277,6 +278,19 @@ static void Motor_ControlTask(void)
  ******************************************************************************/
 void Motor_Init(void)
 {
+  GPIO_Init(BTN_STOP_PORT, BTN_STOP_PIN, GPIO_Mode_In_PU_IT); // Nothalt
+  GPIO_Init(LIM_PORT, LIM_A_PIN, GPIO_Mode_In_PU_IT); // Limit A
+  GPIO_Init(LIM_PORT, LIM_B_PIN, GPIO_Mode_In_PU_IT); // Limit B
+  EXTI_SetPortSensitivity(EXTI_Port_B, EXTI_Trigger_Falling);
+  EXTI_SelectPort(EXTI_Port_B);
+  EXTI_SetHalfPortSelection(EXTI_HalfPort_B_LSB, ENABLE);
+  EXTI_SetHalfPortSelection(EXTI_HalfPort_B_MSB, ENABLE);
+  GPIO_Init(MOT_PWREN_PORT, MOT_PWREN_PIN, GPIO_Mode_Out_PP_Low_Slow); // Motor Power Enable
+  GPIO_Init(MOT_PORT, MOT2_B_PIN, GPIO_Mode_Out_PP_Low_Slow); // Motor 2, Dir A
+  GPIO_Init(MOT_PORT, MOT2_A_PIN, GPIO_Mode_Out_PP_Low_Slow); // Motor 2, Dir B
+  GPIO_Init(MOT_PORT, MOT1_B_PIN, GPIO_Mode_Out_PP_Low_Slow); // Motor 1, Dir A
+  GPIO_Init(MOT_PORT, MOT1_A_PIN, GPIO_Mode_Out_PP_Low_Slow); // Motor 1, Dir B
+  
   bMotorEnable = false;
   bMotorStop = false;
   bHomingActive = true;
