@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "stm8l15x.h"
+#include "io_map.h"
 #include "commlib.h"
 #include "BTHandler.h"
 #include "GPSHandler.h"
@@ -357,9 +358,15 @@ static bool GPSHandler_ParseNmeaIn(char* pszBuf, int iLen)
 void GPSHandler_Init(void)
 {
   bGpsActive = false;
-  GPIO_WriteBit(GPIOD, GPIO_Pin_2, false);
+    
+  GPIO_Init(USART3_GPS_PORT, USART3_GPS_RX_PIN, GPIO_Mode_In_FL_No_IT);
+  GPIO_Init(USART3_GPS_PORT, USART3_GPS_TX_PIN, GPIO_Mode_Out_PP_High_Fast);
+  GPIO_Init(GPS_PWREN_PORT, GPS_PWREN_PIN, GPIO_Mode_Out_PP_Low_Slow);
   
   memset(&sSensorGPS, 0, sizeof(sSensorGPS));
+  
+  UART3_Init();
+  UART3_ReceiveUntilTrig('$', '\r', COMMLIB_UART3RX_MAX_BUF);
 }
 
 /*!****************************************************************************
