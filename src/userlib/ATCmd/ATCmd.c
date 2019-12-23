@@ -26,9 +26,11 @@ static const ATCmd_CbConf asCommands[] = {
   {"CTIME",   ATCmd_TimeTest, ATCmd_TimeRead,   ATCmd_TimeWrite,  0},
   {"CALIGN",  ATCmd_OK,       ATCmd_AlignRead,  0,                0},
   {"CGNSPOS", ATCmd_PosTest,  ATCmd_PosRead,    ATCmd_PosWrite,   0},
+  {"CGNSPWR", ATCmd_GnsPwrTest,0,               ATCmd_GnsPwrWrite,0},
   {"CPWR",    ATCmd_OK,       ATCmd_PwrRead,    0,                0},
   {"CINTV",   ATCmd_IntvTest, 0,                ATCmd_IntvWrite,  0},
   {"CGUI",    ATCmd_OK,       ATCmd_GuiRead,    0,                0},
+  {"CLOG",    ATCmd_OK,       0,                0,                ATCmd_LogClear},
 };
 #define NUM_ATCMD_CONF (sizeof(asCommands)/sizeof(*asCommands))
 
@@ -42,7 +44,7 @@ static void ATCmd_SendOK(void)
 
 static void ATCmd_SendError(void)
 {
-  sprintf((volatile char*)aucUart1TxBuf, "ERROR\r\n");
+  sprintf((volatile char*)aucUart1TxBuf, "ERROR: %s\r\n", aucUart1RxBuf);
   UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
   while(!UART1_IsTxReady());
 }

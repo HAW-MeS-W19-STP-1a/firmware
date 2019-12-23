@@ -24,11 +24,16 @@ bool ATCmd_PosTest(const char* pszBuf);
 bool ATCmd_PosRead(const char* pszBuf);
 bool ATCmd_PosWrite(const char* pszBuf);
 
+bool ATCmd_GnsPwrTest(const char* pszBuf);
+bool ATCmd_GnsPwrWrite(const char* pszBuf);
+
 bool ATCmd_PwrRead(const char* pszBuf);
 
 bool ATCmd_IntvTest(const char* pszBuf);
 bool ATCmd_IntvWrite(const char* pszBuf);
 
 bool ATCmd_GuiRead(const char* pszBuf);
+
+bool ATCmd_LogClear(const char* pszBuf);
 
 #endif /* USERLIB_ATCMD_CMDFUNC_H_ */
