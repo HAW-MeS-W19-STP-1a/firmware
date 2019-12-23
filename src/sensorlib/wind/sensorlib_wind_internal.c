@@ -12,6 +12,7 @@
 #include "powerlib.h"
 #include "sensorlib_wind.h"
 #include "sensorlib_wind_internal.h"
+#include <stdio.h>
 
 
 /*- Symbolische Konstanten ---------------------------------------------------*/
@@ -41,22 +42,22 @@ typedef struct tag_Wind_DirLutRow {
 /*- Modulglobale Variablen ---------------------------------------------------*/
 /*! Lookup-Tabelle für Windrichtungsermittlung aus ADC-Messwerten             */
 static const Wind_DirLutRow asWindLUT[WIND_DIRLUT_NUM] = {
-  {2986, 3301, Wind_Direction_N},
-  {1543, 1705, Wind_Direction_NNE},
-  {1753, 1938, Wind_Direction_NE},
-  { 318,  352, Wind_Direction_ENE},
-  { 354,  391, Wind_Direction_E},
-  { 250,  277, Wind_Direction_ESE},
-  { 702,  776, Wind_Direction_SE},
-  { 481,  531, Wind_Direction_SSE},
-  {1092, 1207, Wind_Direction_S},
-  { 930, 1028, Wind_Direction_SSW},
-  {2395, 2647, Wind_Direction_SW},
-  {2278, 2518, Wind_Direction_WSW}, 
-  {3592, 3970, Wind_Direction_W},
-  {3145, 3476, Wind_Direction_WNW},
-  {3372, 3727, Wind_Direction_NW},
-  {2671, 2952, Wind_Direction_NNW}
+  {2970, 3010, Wind_Direction_N},
+  {1567, 1607, Wind_Direction_NNE},
+  {1773, 1813, Wind_Direction_NE},
+  { 320,  360, Wind_Direction_ENE},
+  { 360,  400, Wind_Direction_E},
+  { 245,  285, Wind_Direction_ESE},
+  { 728,  768, Wind_Direction_SE},
+  { 496,  536, Wind_Direction_SSE},
+  {1120, 1160, Wind_Direction_S},
+  { 957,  997, Wind_Direction_SSW},
+  {2390, 2430, Wind_Direction_SW},
+  {2280, 2320, Wind_Direction_WSW}, 
+  {3549, 3589, Wind_Direction_W},
+  {3117, 3157, Wind_Direction_WNW},
+  {3340, 3380, Wind_Direction_NW},
+  {2660, 2700, Wind_Direction_NNW}
 };
 
 
@@ -70,7 +71,12 @@ static const Wind_DirLutRow asWindLUT[WIND_DIRLUT_NUM] = {
  ******************************************************************************/
 void Wind_GetPulseCount(Wind_Sensor* pSensor)
 {
-  pSensor->sRaw.uiRawVelocity = TIM3_GetCounter();
+  pSensor->sRaw.auiRawVelocity[pSensor->sRaw.ucHead] = TIM3_GetCounter();
+  pSensor->sRaw.ucHead += 1;
+  while(pSensor->sRaw.ucHead >= NUM_WIND_AVG)
+  {
+    pSensor->sRaw.ucHead -= NUM_WIND_AVG;
+  }
   pSensor->sRaw.bRawDataUpdate = true;
   TIM3_SetCounter(0);
 }
@@ -96,16 +102,60 @@ void Wind_GetAnalogVal(Wind_Sensor* pSensor)
 
 /*!****************************************************************************
  * @brief
- * Windgeschwindigkeit von PPS in m/s umrechnen
+ * Mittlere Windgeschwindigkeit von PPS in m/s umrechnen
  *
  * @param[in] *pSensor  Sensor-Struktur
  * @return    uint16_t  Windgeschwindigkeit in m/s
  *
  * @date  31.10.2019
+ * @date  19.12.2019  Mittelwertbildung
  ******************************************************************************/
-uint16_t Wind_CalcVelocity(Wind_Sensor* pSensor)
+uint16_t Wind_CalcAvgVelocity(Wind_Sensor* pSensor)
 { 
-  return ((uint32_t)pSensor->sRaw.uiRawVelocity * 553) >> 6;
+  uint32_t ulVel = 0;
+  int iOffset;
+  for (iOffset = 0; iOffset < NUM_WIND_AVG; ++iOffset)
+  {
+    uint8_t ucIndex = pSensor->sRaw.ucHead + iOffset;
+    while (ucIndex >= NUM_WIND_AVG)
+    {
+      ucIndex -= NUM_WIND_AVG;
+    }
+    ulVel += ((uint32_t)pSensor->sRaw.auiRawVelocity[ucIndex] * 553) >> 6;
+  }
+  
+  return (ulVel >> NUM_WIND_AVG_BITS);
+}
+
+/*!****************************************************************************
+ * @brief
+ * Maximale Windgeschwindigkeit von PPS in m/s umrechnen
+ *
+ * @param[in] *pSensor  Sensor-Struktur
+ * @return    uint16_t  Windgeschwindigkeit in m/s
+ *
+ * @date  19.12.2019
+ ******************************************************************************/
+uint16_t Wind_CalcMaxVelocity(Wind_Sensor* pSensor)
+{ 
+  uint16_t uiVel = 0;
+  int iOffset;
+  for (iOffset = 0; iOffset < NUM_WIND_AVG; ++iOffset)
+  {
+    uint16_t uiThisVel;
+    uint8_t ucIndex = pSensor->sRaw.ucHead + iOffset;
+    while (ucIndex >= NUM_WIND_AVG)
+    {
+      ucIndex -= NUM_WIND_AVG;
+    }
+    uiThisVel = ((uint32_t)pSensor->sRaw.auiRawVelocity[ucIndex] * 553) >> 6;
+    if (uiThisVel > uiVel)
+    {
+      uiVel = uiThisVel;
+    }
+  }
+  
+  return uiVel;
 }
 
 /*!****************************************************************************
@@ -121,15 +171,19 @@ uint16_t Wind_CalcVelocity(Wind_Sensor* pSensor)
 Wind_Direction Wind_CalcDirection(Wind_Sensor* pSensor)
 {
   uint8_t ucIndex;
+  Wind_Direction eDir;
   uint16_t uiRaw = pSensor->sRaw.uiRawDirection;
   for (ucIndex = 0; ucIndex < WIND_DIRLUT_NUM; ++ucIndex)
   {
     if ((uiRaw >= asWindLUT[ucIndex].uiAdcMin) && (uiRaw <= asWindLUT[ucIndex].uiAdcMax))
     {
-      return asWindLUT[ucIndex].eDir;
+      eDir = asWindLUT[ucIndex].eDir;
+      break;
     }
   }
   
+  printf("\tWIND -- %d - %d\r\n", (int)eDir, (int)uiRaw);
+  
   /* Eintrag nicht in LUT gefunden - Standardwert "N"     */
-  return Wind_Direction_N;
+  return eDir;
 }

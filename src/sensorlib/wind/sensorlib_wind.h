@@ -15,6 +15,10 @@
 #include <stdbool.h>
 
 
+#define NUM_WIND_AVG_BITS 3
+#define NUM_WIND_AVG  (1 << NUM_WIND_AVG_BITS)
+
+
 /*- Typdefinitionen ----------------------------------------------------------*/
 /*!****************************************************************************
  * @brief
@@ -64,7 +68,8 @@ typedef struct tag_Wind_Sensor
   struct
   {
     bool bRawDataUpdate;
-    uint16_t uiRawVelocity;
+    uint8_t ucHead;
+    uint16_t auiRawVelocity[NUM_WIND_AVG];
     uint16_t uiRawDirection;
   } sRaw;
   
@@ -72,7 +77,8 @@ typedef struct tag_Wind_Sensor
   struct
   {
     /*! Windgeschwindigkeit in m/s                        */
-    uint16_t uiVelocity;
+    uint16_t uiAvgVelocity;
+    uint16_t uiMaxVelocity;
     
     /*! Windrichtung als Himmelsrichtung                  */
     Wind_Direction eDirection;
@@ -82,6 +88,7 @@ typedef struct tag_Wind_Sensor
 
 /*- Funktionsprototypen ------------------------------------------------------*/
 void Wind_Init(Wind_Sensor* pSensor, uint16_t uiPollInterval);
-void Wind_Update(Wind_Sensor* pSensor);
+void Wind_UpdateSpd(Wind_Sensor* pSensor);
+void Wind_UpdateDir(Wind_Sensor* pSensor);
 
 #endif /* SENSORLIB_WIND_H_ */
