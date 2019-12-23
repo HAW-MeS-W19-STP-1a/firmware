@@ -39,8 +39,8 @@
 #define	INIT_PORT()	init_port()	/* Initialize MMC control port (CS/CLK/DI:output, DO:input) */
 #define DLY_US(n)	dly_us(n)	/* Delay n microseconds */
 
-#define CS_H()    GPIO_WriteBit(GPIOE, GPIO_Pin_2, ENABLE);
-#define CS_L()    GPIO_WriteBit(GPIOE, GPIO_Pin_2, DISABLE);
+#define CS_H()    GPIO_WriteBit(SD_CS_PORT, SD_CS_PIN, ENABLE);
+#define CS_L()    GPIO_WriteBit(SD_CS_PORT, SD_CS_PIN, DISABLE);
 
 /*--------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ void xmit_mmc (
     BYTE d = *(buff++);
     SPI_SendData(SPI2, d);
     while (!SPI_GetFlagStatus(SPI2, SPI_FLAG_TXE));
-    DLY_US(2);
+    DLY_US(10);
   }
   while (--bc);
 }
@@ -142,7 +142,7 @@ int wait_ready (void)	/* 1:OK, 0:Timeout */
 	for (tmr = 5000; tmr; tmr--) {	/* Wait for ready in timeout of 500ms */
 		rcvr_mmc(&d, 1);
 		if (d == 0xFF) break;
-		dly_us(100);
+		dly_us(200);
 	}
 
 	return tmr ? 1 : 0;
