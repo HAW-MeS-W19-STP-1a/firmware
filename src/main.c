@@ -6,10 +6,12 @@
 #include "BTHandler.h"
 #include "ATCmd.h"
 #include "GPSHandler.h"
+#include "SensorLog.h"
 #include "sensorlib.h"
 #include "motorlib.h"
 #include "diskio.h"
 #include "ff.h"
+#include "io_map.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -22,10 +24,10 @@ bool bDir;
 volatile int iTimer1s = 10;
 
 /*! Statusflag für Ausführung des 1s-Task                                     */
-volatile bool bTask1sFlag = false;
+volatile bool bTask1sFlag = true;
 
 /*! Statusflag für Ausführung des Wakeup-Task                                 */
-volatile bool bTaskWakeupFlag = false;
+volatile bool bTaskWakeupFlag = true;
 
 /*! Konfigurationsdaten für die interne Echtzeituhr                           */
 RTC_InitTypeDef sRtcInit;
@@ -51,6 +53,13 @@ QMC5883_Sensor sSensorQMC5883;
 /*! Sensordaten vom MPU6050 Accelerometer / Gyro                              */
 MPU6050_Sensor sSensorMPU6050;
 
+/*! Handle für Dateisystem                                                    */
+FATFS fs;
+
+
+/*- Funktionsprototypen ------------------------------------------------------*/
+void SaveSensors(void);
+
 
 /*!****************************************************************************
  * @brief
@@ -68,18 +77,15 @@ void main(void)
   CLK_LSEConfig(CLK_LSE_ON);
   CLK_RTCClockConfig(CLK_RTCCLKSource_LSE, CLK_RTCCLKDiv_1);
   
-  /* Timer 2 for 200ms Task trigger                         */
+  /* Timer 2 für 100ms-Task Trigger                       */
   CLK_PeripheralClockConfig(CLK_Peripheral_TIM2, ENABLE);
   TIM2_InternalClockConfig();
   TIM2_TimeBaseInit(TIM2_Prescaler_128, TIM2_CounterMode_Down, 12500);
   TIM2_ITConfig(TIM2_IT_Update, ENABLE);
   TIM2_Cmd(ENABLE);
   
-  /* Initialise GPIO pins                                 */
-  GPIO_Init(GPIOA, GPIO_Pin_7, GPIO_Mode_Out_PP_Low_Slow); // PWM
-  GPIO_Init(GPIOB, GPIO_Pin_1, GPIO_Mode_In_PU_No_IT); // Anemometer In
-  GPIO_Init(GPIOB, GPIO_Pin_2, GPIO_Mode_In_FL_No_IT); // Wind Vane Analog In
-  GPIO_Init(GPIOG, GPIO_Pin_4, GPIO_Mode_In_FL_No_IT); // Button
+  /* GPIO Button                                          */
+  GPIO_Init(BTN_BLUE_PORT, BTN_BLUE_PIN, GPIO_Mode_In_FL_No_IT);
    
   /* Blink Module init                                    */
   Blink_Init();
@@ -98,38 +104,24 @@ void main(void)
   TIM5_Cmd(ENABLE);
   
   /* Debug UART TX only                                   */
-  GPIO_Init(GPIOE, GPIO_Pin_4, GPIO_Mode_Out_PP_High_Fast);
+  GPIO_Init(USART2_PORT, USART2_TX_PIN, GPIO_Mode_Out_PP_High_Fast);
   UART2_Init();
   
   /* Initialise Pins for I2C Master Mode                  */
-  GPIO_Init(GPIOC, GPIO_Pin_0, GPIO_Mode_Out_OD_HiZ_Fast);
-  GPIO_Init(GPIOC, GPIO_Pin_1, GPIO_Mode_Out_OD_HiZ_Fast);
+  GPIO_Init(I2C1_PORT, I2C1_SCL_PIN, GPIO_Mode_Out_OD_HiZ_Fast); // SDA
+  GPIO_Init(I2C1_PORT, I2C1_SDA_PIN, GPIO_Mode_Out_OD_HiZ_Fast);
   
   /* Bluetooth UART TX and RX                             */
   BTHandler_Init();
   ATCmd_Init();
   
   /* NMEA Input, Binary CMD output                        */
-  GPIO_Init(GPIOG, GPIO_Pin_0, GPIO_Mode_In_FL_No_IT);
-  GPIO_Init(GPIOG, GPIO_Pin_1, GPIO_Mode_Out_PP_High_Fast);
-  GPIO_Init(GPIOD, GPIO_Pin_2, GPIO_Mode_Out_PP_Low_Slow); // GPS Power Enable
   GPSHandler_Init();
-  UART3_Init();
-  UART3_ReceiveUntilTrig('$', '\r', COMMLIB_UART3RX_MAX_BUF);
+  
+  /* Messwerteprotokoll initialisieren                    */
+  SensorLog_Init();
   
   /* Motor controller                                     */
-  GPIO_Init(GPIOB, GPIO_Pin_0, GPIO_Mode_In_PU_IT); // Nothalt
-  GPIO_Init(GPIOB, GPIO_Pin_3, GPIO_Mode_In_PU_IT); // Limit A
-  GPIO_Init(GPIOB, GPIO_Pin_4, GPIO_Mode_In_PU_IT); // Limit B
-  EXTI_SetPortSensitivity(EXTI_Port_B, EXTI_Trigger_Falling);
-  EXTI_SelectPort(EXTI_Port_B);
-  EXTI_SetHalfPortSelection(EXTI_HalfPort_B_LSB, ENABLE);
-  EXTI_SetHalfPortSelection(EXTI_HalfPort_B_MSB, ENABLE);
-  GPIO_Init(GPIOD, GPIO_Pin_4, GPIO_Mode_Out_PP_Low_Slow); // Motor Power Enable
-  GPIO_Init(GPIOF, GPIO_Pin_4, GPIO_Mode_Out_PP_Low_Slow); // Motor 2, Dir A
-  GPIO_Init(GPIOF, GPIO_Pin_5, GPIO_Mode_Out_PP_Low_Slow); // Motor 2, Dir B
-  GPIO_Init(GPIOF, GPIO_Pin_6, GPIO_Mode_Out_PP_Low_Slow); // Motor 1, Dir A
-  GPIO_Init(GPIOF, GPIO_Pin_7, GPIO_Mode_Out_PP_Low_Slow); // Motor 1, Dir B
   Motor_Init();
   Motor_Cmd(true);
   
@@ -144,10 +136,10 @@ void main(void)
   RTC_ITConfig(RTC_IT_WUT, ENABLE);
   
   /* SPI und SD-Karte                                     */
-  GPIO_Init(GPIOG, GPIO_Pin_5, GPIO_Mode_Out_PP_Low_Fast);
-  GPIO_Init(GPIOG, GPIO_Pin_6, GPIO_Mode_Out_PP_Low_Fast);
-  GPIO_Init(GPIOG, GPIO_Pin_7, GPIO_Mode_In_PU_No_IT);
-  GPIO_Init(GPIOG, GPIO_Pin_3, GPIO_Mode_Out_PP_High_Fast);
+  GPIO_Init(SPI2_PORT, SPI2_SCK_PIN, GPIO_Mode_Out_PP_Low_Fast);
+  GPIO_Init(SPI2_PORT, SPI2_MOSI_PIN, GPIO_Mode_Out_PP_Low_Fast);
+  GPIO_Init(SPI2_PORT, SPI2_MISO_PIN, GPIO_Mode_In_PU_No_IT);
+  GPIO_Init(SD_CS_PORT, SD_CS_PIN, GPIO_Mode_Out_PP_High_Fast);
   CLK_PeripheralClockConfig(CLK_Peripheral_SPI2, ENABLE);
   SPI_Init(SPI2, 
     SPI_FirstBit_MSB, 
@@ -162,6 +154,7 @@ void main(void)
   SPI_Cmd(SPI2, ENABLE);
   
   /* RTC initialisieren                                   */
+  #ifdef STATIC_INIT_RTC
   RTC_TimeStructInit(&sTime);
   sTime.RTC_Hours = 8;
   sTime.RTC_Minutes = 0;
@@ -172,15 +165,14 @@ void main(void)
   sDate.RTC_Month = 11;
   sDate.RTC_Year = 19;
   RTC_SetDate(RTC_Format_BIN, &sDate);
+  #endif /* STATIC_INIT_RTC */
   
-  //printf("Powerup wait\r\n");
-  //while (GPIO_ReadInputDataBit(GPIOG, GPIO_Pin_4) != 0);
-  
+  #ifdef MOTORLIB_DEMO
   Motor_SetTiltRef(0);
   Motor_SetTurnRef(0);
   Motor_SetTurn(450);
   bDir = true;
-  
+  #endif /* MOTORLIB_DEMO */
   
   /* Enable interrupt execution                           */
   enableInterrupts();
@@ -201,10 +193,19 @@ void main(void)
   printf(" OK\r\n");
   I2CMaster_DeInit();
   
+  printf("SD-Card init...");
+  if (f_mount(&fs, "", 0) == FR_OK)
+  {
+    printf(" OK\r\n");
+  }
+  else
+  {
+    printf(" FAIL\r\n");
+  }
+  
   #ifdef FATFS_DEMO
   printf("SD-Card init...");
   {
-    FATFS fs;
     DIR dir;
     FILINFO fno;
     FIL fil;
@@ -247,8 +248,8 @@ void main(void)
       bTask1sFlag = false;
       printf("Task1s\r\n");
       
-      Wind_Update(&sSensorWind);
-      //printf("Pos Tilt=%d, Turn=%d\r\n", Motor_GetTilt(), Motor_GetTurn());
+      /* Wind-Mittelwert und -Böen auswerten              */
+      Wind_UpdateSpd(&sSensorWind);
       
       BTHandler_Task1s();
       if (Blink_Ready(Blink_Led_SYS))
@@ -258,25 +259,33 @@ void main(void)
     }
     
     if (bTaskWakeupFlag)
-    {
+    {      
       bTaskWakeupFlag = false;
       printf("TaskWakeup\r\n");
       Blink_SetPattern(Blink_Led_SYS, 0x005F);
       
+      #ifdef MOTORLIB_DEMO
       if (Motor_IsTurnReached())
       {
         Motor_SetTurn(bDir ? 0 : 450);
       }
+      #endif /* MOTORLIB_DEMO */
       
+      /* Sensormessswerte abrufen                         */
       I2CMaster_Init();
       BME280_Update(&sSensorBME280);   
       QMC5883_Update(&sSensorQMC5883);
       MPU6050_Update(&sSensorMPU6050);
+      Wind_UpdateDir(&sSensorWind);
       CPUTemp_Update(&sSensorCPUTemp);
       I2CMaster_DeInit();
       
+      /* Bluetooth / GPS aufwecken                        */
       BTHandler_TakeWakeup();
       GPSHandler_TaskWakeup();
+      
+      /* Sensordaten speichern                            */
+      SaveSensors();
     }
     
     /* Bluetooth Verbindung und AT-Commands verarbeiten   */
@@ -313,6 +322,89 @@ void main(void)
         
     /* Fertig - auf nächsten Interrupt warten             */
     wfi();
+  }
+}
+
+void SaveSensors(void)
+{
+  SensorLogItem* pLog;
+  uint16_t uiWindDir;
+  FIL fil;
+  
+  /* Abs. Windrichtung über Azimuth bestimmen             */
+  uiWindDir = 6300 + sSensorQMC5883.sMeasure.uiAzimuth - (sSensorWind.sMeasure.eDirection * 225);
+  while (uiWindDir >= 3600) 
+  {
+    uiWindDir -= 3600;
+  }
+  
+  /* Eintrag im Ringspeicher                              */
+  pLog = SensorLog_Advance();
+  RTC_GetDate(RTC_Format_BIN, &(pLog->sTimestamp.sDate));
+  RTC_GetTime(RTC_Format_BIN, &(pLog->sTimestamp.sTime));
+  pLog->sTemperature.iBME = sSensorBME280.sMeasure.iTemperature;
+  pLog->sTemperature.iCPU = sSensorCPUTemp.sMeasure.cTemp * 100;
+  pLog->sTemperature.iQMC = sSensorQMC5883.sMeasure.iTemperature;
+  pLog->sTemperature.iMPU = sSensorMPU6050.sMeasure.iTemperature;
+  pLog->ulPressure = sSensorBME280.sMeasure.ulPressure;
+  pLog->ulHumidity = sSensorBME280.sMeasure.ulHumidity;
+  pLog->sWind.uiDir = uiWindDir;
+  pLog->sWind.uiVelo = sSensorWind.sMeasure.uiAvgVelocity;
+  pLog->sAlignment.uiAzimuth = sSensorQMC5883.sMeasure.uiAzimuth;
+  pLog->sAlignment.iZenith = sSensorMPU6050.sMeasure.sAngle.iYZ;
+  pLog->sPosition.lLat = sSensorGPS.sPosition.lLat;
+  pLog->sPosition.lLong = sSensorGPS.sPosition.lLong;
+  pLog->sPosition.iAlt = sSensorGPS.sPosition.iAlt;
+  pLog->sPower.uiBatVolt = 0;
+  pLog->sPower.uiPanelVolt = 0;
+  pLog->sPower.iBatCurr = 0;
+  pLog->sPower.iPanelCurr = 0;
+  
+  /* Auf SD-Karte schreiben                               */
+  printf("WriteLog...");
+  if (f_open(&fil, "LOG.TXT", FA_WRITE | FA_OPEN_APPEND) == FR_OK)
+  {
+    printf(" OK\r\n");
+    f_printf(&fil, "%04d-%02d-%02dT%02d:%02d:%02dZ,",
+      (int)pLog->sTimestamp.sDate.RTC_Year + 2000,
+      (int)pLog->sTimestamp.sDate.RTC_Month,
+      (int)pLog->sTimestamp.sDate.RTC_Date,
+      (int)pLog->sTimestamp.sTime.RTC_Hours,
+      (int)pLog->sTimestamp.sTime.RTC_Minutes,
+      (int)pLog->sTimestamp.sTime.RTC_Seconds
+    );
+    f_printf(&fil, "%d,%d,%d,%d,", 
+      pLog->sTemperature.iBME,
+      pLog->sTemperature.iCPU,
+      pLog->sTemperature.iQMC,
+      pLog->sTemperature.iMPU
+    );
+    f_printf(&fil, "%l,%l,",
+      pLog->ulPressure,
+      pLog->ulHumidity
+    );
+    f_printf(&fil, "%d,%d,%d,%d,",
+      pLog->sWind.uiDir,
+      pLog->sWind.uiVelo,
+      pLog->sAlignment.uiAzimuth,
+      pLog->sAlignment.iZenith
+    );
+    f_printf(&fil, "%l,%l,%d,",
+      pLog->sPosition.lLat,
+      pLog->sPosition.lLong,
+      pLog->sPosition.iAlt
+    );
+    f_printf(&fil, "%d,%d,%d,%d\r\n",
+      pLog->sPower.uiBatVolt,
+      pLog->sPower.uiPanelVolt,
+      pLog->sPower.iBatCurr,
+      pLog->sPower.iPanelCurr
+    );
+    f_close(&fil);
+  }
+  else
+  {
+    printf(" FAIL\r\n");
   }
 }
 
