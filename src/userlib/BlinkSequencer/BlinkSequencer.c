@@ -1,4 +1,5 @@
 #include "stm8l15x.h"
+#include "io_map.h"
 #include "BlinkSequencer.h"
 
 /*- Typdefinitionen ----------------------------------------------------------*/
@@ -12,9 +13,9 @@ typedef struct tag_Blink_LedGpio
 /*- Modulglobale Variablen ---------------------------------------------------*/
 volatile Blink_LedGpio asBlinkGPIO[Blink_MaxLed] = 
 {
-  {GPIOB, GPIO_Pin_5}, /* SYS LED */
-  {GPIOB, GPIO_Pin_6}, /* MOT LED */
-  {GPIOB, GPIO_Pin_7}  /* BT LED */
+  {LED_PORT, LED_SYS_PIN},  /* SYS LED */
+  {LED_PORT, LED_MOT_PIN},  /* MOT LED */
+  {LED_PORT, LED_BT_PIN}    /* BT LED */
 };
 
 volatile uint16_t uiBlinkPattern[Blink_MaxLed];
