@@ -62,6 +62,8 @@ volatile UART1_Mode eUart1RxMode;
 /*! Zustandsspeicher für Sendemodus                                           */
 volatile UART1_Mode eUart1TxMode;
 
+volatile bool bUart1EchoMode;
+
 
 /*!****************************************************************************
  * @brief
@@ -87,6 +89,7 @@ void UART1_Init(void)
   cUart1RxEndChar = '\0';
   eUart1TxMode = UART1_Mode_IDLE;
   eUart1RxMode = UART1_Mode_IDLE;
+  bUart1EchoMode = false;
 }
 
 /*!****************************************************************************
@@ -252,6 +255,11 @@ void UART1_FlushTx(void)
   ucUart1TxLen = 0;
 }
 
+void UART1_SetEchoMode(bool bEnable)
+{
+  bUart1EchoMode = bEnable;
+}
+
 /*!****************************************************************************
  * @brief
  * Interruptserviceroutine für Datenausgabe an der UART1-Schnittstelle
@@ -303,6 +311,11 @@ void UART1_FlushTx(void)
 @far @interrupt void UART1_RxInterruptHandler(void)
 {
   uint8_t ucRxData = USART_ReceiveData8(USART1);
+  
+  if (bUart1EchoMode)
+  {
+    USART_SendData8(USART1, ucRxData);
+  }
   
   switch (eUart1RxMode)
   {

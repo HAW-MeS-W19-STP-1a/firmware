@@ -13,7 +13,7 @@
 #include "stm8l15x.h"
 #include "io_map.h"
 #include "commlib.h"
-#include "BTHandler.h"
+#include "ATCmd.h"
 #include "GPSHandler.h"
 
 
@@ -75,6 +75,32 @@ static char CtoI(char c)
 
 /*!****************************************************************************
  * @brief
+ * Berechnung von 10er-Potenzen mit Exponenten [0, 4].
+ *
+ * @param[in] b     Exponent
+ * @return    int   Ergebnis für 10^b
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
+static int pow10(uint8_t b)
+{
+  uint8_t x;
+  int res = 0;
+  
+  if ((b >= 0) && (b <= 4))
+  {
+    res = 1;
+    for (x = 0; x < b; ++x)
+    {
+      res *= 10;
+    }
+  }
+  
+  return res;
+}
+
+/*!****************************************************************************
+ * @brief
  * Sentence-Typ ermitteln
  *
  * @param[in] *pszBuf   NMEA_IN Puffer
@@ -116,6 +142,8 @@ static GPSHandler_Sentence GPSHandler_GetType(char* pszBuf)
  * @param[in] eType   Sentence-Typ
  *
  * @date  06.11.2019
+ * @date  23.12.2019  Auflösung korrigiert
+ * @date  30.12.2019  Anzahl der Satelliten, Höhe über NN hinzugefügt
  ******************************************************************************/
 static void GPSHandler_ParseNmeaField(char* pszBuf, int iLen, int iNum, GPSHandler_Sentence eType)
 {
@@ -146,14 +174,14 @@ static void GPSHandler_ParseNmeaField(char* pszBuf, int iLen, int iNum, GPSHandl
           
         case 3:
           /* Latitude */
-          sSensorGPS.sPosition.lLat = CtoI(*pszBuf++) * 10000000L; // 10d = *10*10^6
-          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 1000000L; //  1d = *10^6
-          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 166666L; // 10m = /60*10*10^6
-          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 16666L; //  1m = /60*10^6
+          sSensorGPS.sPosition.lLat = CtoI(*pszBuf++) * 100000L; // 10d = *10*10^6
+          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 10000L; //  1d = *10^6
+          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 1666L; // 10m = /60*10*10^6
+          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 166L; //  1m = /60*10^6
           pszBuf++; // "."
-          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 1666L; // 0.1m = /60*0.1*10^6
-          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 166L; // 0.01m = /60*0.01*10^6
-          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 16L; // 0.001m = /60*0.001*10^6
+          sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 16L; // 0.1m = /60*0.1*10^6
+          //sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 166L; // 0.01m = /60*0.01*10^6
+          //sSensorGPS.sPosition.lLat += CtoI(*pszBuf++) * 16L; // 0.001m = /60*0.001*10^6
           sSensorGPS.sInfo.bLatValid = true;
           break;
           
@@ -169,15 +197,15 @@ static void GPSHandler_ParseNmeaField(char* pszBuf, int iLen, int iNum, GPSHandl
           
         case 5:
           /* Longitude */
-          sSensorGPS.sPosition.lLong = CtoI(*pszBuf++) * 100000000L; // 100d = *100*10^6
-          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 10000000L; // 10d = *10*10^6
-          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 1000000L; // 1d = *10^6
-          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 166666L; // 10m = /60*10*10^6
-          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 16666L; // 1m = /60*10^6
+          sSensorGPS.sPosition.lLong = CtoI(*pszBuf++) * 1000000L; // 100d = *100*10^6
+          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 100000L; // 10d = *10*10^6
+          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 10000L; // 1d = *10^6
+          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 1666L; // 10m = /60*10*10^6
+          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 166L; // 1m = /60*10^6
           pszBuf++; // "."
-          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 1666L; // 0.1m = /60*0.1*10^6
-          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 166L; // 0.01m = /60*0.01*10^6
-          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 16L; // 0.001m = /60*0.001*10^6
+          sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 16L; // 0.1m = /60*0.1*10^6
+          //sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 166L; // 0.01m = /60*0.01*10^6
+          //sSensorGPS.sPosition.lLong += CtoI(*pszBuf++) * 16L; // 0.001m = /60*0.001*10^6
           sSensorGPS.sInfo.bLongValid = true;
           break;
           
@@ -226,7 +254,45 @@ static void GPSHandler_ParseNmeaField(char* pszBuf, int iLen, int iNum, GPSHandl
           /* Fix valid */
           sSensorGPS.sInfo.bTimeValid &= (*pszBuf != '0');
           sSensorGPS.sInfo.bDateValid &= (*pszBuf != '0');
+          break;
           
+        case 7:
+          /* Number of satellites */
+          sSensorGPS.sInfo.ucNumSV = CtoI(*pszBuf++) * 10;
+          sSensorGPS.sInfo.ucNumSV += CtoI(*pszBuf++);
+          break;
+          
+        case 9:
+        {
+          /* Altitude */
+          int i;
+          int iNumDec;
+          int iExp;
+          
+          /* Anzahl der Vorkommastellen zählen */
+          for (i = 0; i < iLen; ++i)
+          {
+            if (pszBuf[i] == '.')
+            {
+              iNumDec = i;
+              break;
+            }
+          }
+          if ((iNumDec > 0) && (iNumDec < 5))
+          {
+            /* Gültige Stellenanzahl */
+            sSensorGPS.sPosition.iAlt = 0;
+            iExp = 0;
+            for (i = iNumDec - 1; i >= 0; --i)
+            {
+              sSensorGPS.sPosition.iAlt += CtoI(pszBuf[i]) * pow10(iExp);
+              ++iExp;
+            }
+          }
+          sSensorGPS.sInfo.bAltValid = true;
+          break;
+        }
+        
         default:
           ;
       }
@@ -311,6 +377,17 @@ static bool GPSHandler_ParseNmeaIn(char* pszBuf, int iLen)
         {
           /* Debugausgabe                                 */
           printf("NmeaInProc: %s\r\n", pszBuf);
+          if (ATCmd_GetDataMode(ATCmd_DataModeSrc_GPS))
+          {
+            strcpy((volatile char*)aucUart1TxBuf, pszBuf);
+            strcat((volatile char*)aucUart1TxBuf, "\r\n");
+            if (aucUart1TxBuf[0] != '\0')
+            {
+              UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
+              while(!UART1_IsTxReady());
+              UART1_FlushTx();
+            }
+          }
           
           switch (eType)
           {
@@ -334,6 +411,17 @@ static bool GPSHandler_ParseNmeaIn(char* pszBuf, int iLen)
         /* Unbekannter Typ - verwerfen                    */
         aucUart3RxBuf[6] = '\0';
         printf("NmeaInProc: %s\r\n", aucUart3RxBuf);
+        if (ATCmd_GetDataMode(ATCmd_DataModeSrc_GPS))
+        {
+          strcpy((volatile char*)aucUart1TxBuf, pszBuf);
+          strcat((volatile char*)aucUart1TxBuf, "\r\n");
+          if (aucUart1TxBuf[0] != '\0')
+          {
+            UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
+            while(!UART1_IsTxReady());
+            UART1_FlushTx();
+          }
+        }
         UART3_FlushRx();
         UART3_ReceiveUntilTrig('$', '\r', COMMLIB_UART3RX_MAX_BUF);
       }
@@ -388,7 +476,7 @@ bool GPSHandler_Poll(void)
  ******************************************************************************/
 void GPSHandler_TaskWakeup(void)
 {
-  GPIO_WriteBit(GPIOD, GPIO_Pin_2, true);
+  GPIO_WriteBit(GPS_PWREN_PORT, GPS_PWREN_PIN, ENABLE);
   bGpsActive = true;
 }
 

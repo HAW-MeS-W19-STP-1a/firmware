@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+
 /*- Funktionsprototypen ------------------------------------------------------*/
 bool ATCmd_OK(const char* pszBuf);
 
@@ -27,6 +28,10 @@ bool ATCmd_PosWrite(const char* pszBuf);
 bool ATCmd_GnsPwrTest(const char* pszBuf);
 bool ATCmd_GnsPwrWrite(const char* pszBuf);
 
+bool ATCmd_GnsTstTest(const char* pszBuf);
+bool ATCmd_GnsTstRead(const char* pszBuf);
+bool ATCmd_GnsTstWrite(const char* pszBuf);
+
 bool ATCmd_PwrRead(const char* pszBuf);
 
 bool ATCmd_IntvTest(const char* pszBuf);
@@ -34,6 +39,16 @@ bool ATCmd_IntvWrite(const char* pszBuf);
 
 bool ATCmd_GuiRead(const char* pszBuf);
 
+bool ATCmd_ForceWkup(const char* pszBuf);
+
 bool ATCmd_LogClear(const char* pszBuf);
+
+bool ATCmd_DebugTest(const char* pszBuf);
+bool ATCmd_DebugRead(const char* pszBuf);
+bool ATCmd_DebugWrite(const char* pszBuf);
+
+bool ATCmd_FileTest(const char* pszBuf);
+bool ATCmd_FileRead(const char* pszBuf);
+bool ATCmd_FileWrite(const char* pszBuf);
 
 #endif /* USERLIB_ATCMD_CMDFUNC_H_ */

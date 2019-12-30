@@ -44,4 +44,6 @@ bool UART1_IsTxReady(void);
 void UART1_FlushRx(void);
 void UART1_FlushTx(void);
 
+void UART1_SetEchoMode(bool bEnable);
+
 #endif /* COMMLIB_UART1_H_ */

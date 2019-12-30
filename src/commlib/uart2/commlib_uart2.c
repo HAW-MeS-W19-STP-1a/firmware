@@ -9,7 +9,10 @@
 
 /*- Headerdateien ------------------------------------------------------------*/
 #include <stdbool.h>
+#include <string.h>
 #include "stm8l15x.h"
+#include "ATCmd.h"
+#include "commlib_uart1.h"
 #include "commlib_uart2.h"
 
 
@@ -67,6 +70,21 @@ char getchar(void)
  ******************************************************************************/
 char putchar(char c)
 {
+  if (ATCmd_GetDataMode(ATCmd_DataModeSrc_Debug))
+  {
+    char cHelp[2] = "";
+    cHelp[0] = c;
+    strncat((volatile char*)aucUart1TxBuf, cHelp, COMMLIB_UART1_MAX_BUF);
+    if (c == '\r')
+    {
+      if (aucUart1TxBuf[0] != '\0')
+      {
+        UART1_SendUntil('\0', COMMLIB_UART1_MAX_BUF);
+        while(!UART1_IsTxReady());
+        UART1_FlushTx();
+      }
+    }
+  }
   while (!(USART_GetFlagStatus(USART2, USART_FLAG_TXE)));
   USART_SendData8(USART2, c);
   return (c);

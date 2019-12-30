@@ -15,6 +15,8 @@
 #include "commlib.h"
 #include "app_sensors.h"
 #include "sensorlog.h"
+#include "ff.h"
+#include "ATCmd.h"
 #include "ATCmd_CmdFunc.h"
 
 
@@ -460,6 +462,62 @@ bool ATCmd_GnsPwrWrite(const char* pszBuf)
   }
 }
 
+bool ATCmd_GnsTstTest(const char* pszBuf)
+{
+  sprintf(AT_TXBUF, "+CGNSTST: 0-1\r\n");
+  AT_Send();
+  return true;
+}
+
+bool ATCmd_GnsTstRead(const char* pszBuf)
+{
+  sprintf(AT_TXBUF, "+CGNSTST: %d\r\n", (int)(eDataModeSrc == ATCmd_DataModeSrc_GPS));
+  AT_Send();
+  return true;
+}
+
+bool ATCmd_GnsTstWrite(const char* pszBuf)
+{
+  if (*pszBuf == '0')
+  {
+    if (eDataModeSrc == ATCmd_DataModeSrc_GPS)
+    {
+      eDataModeSrc = ATCmd_DataModeSrc_None;
+      bDataMode = false;
+      sprintf(AT_TXBUF, "+CGNSTST: 0\r\n");
+      AT_Send();
+      return true;
+    }
+    else
+    {
+      sprintf(AT_TXBUF, "+CGNSTST: not act\r\n");
+      AT_Send();
+      return false;
+    }
+  }
+  else if (*pszBuf == '1')
+  {
+    if (eDataModeSrc == ATCmd_DataModeSrc_None)
+    {
+      sprintf(AT_TXBUF, "+CGNSTST: 1\r\n");
+      AT_Send();
+      eDataModeSrc = ATCmd_DataModeSrc_GPS;
+      bDataMode = true;
+      return true;
+    }
+    else
+    {
+      sprintf(AT_TXBUF, "+CGNSTST: busy\r\n");
+      AT_Send();
+      return false;
+    }
+  }
+  else
+  {
+    return false;
+  }
+}
+
 /*!****************************************************************************
  * @brief
  * Leistungsmesswerte lesen
@@ -594,8 +652,194 @@ bool ATCmd_GuiRead(const char* pszBuf)
   return true;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Wakeup-Task auslösen
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    bool      true
+ *
+ * @date  23.12.2019
+ ******************************************************************************/
+bool ATCmd_ForceWkup(const char* pszBuf)
+{
+  extern volatile bool bTaskWakeupFlag;
+  bTaskWakeupFlag = true;
+  return true;
+}
+
+/*!****************************************************************************
+ * @brief
+ * Messwerte-Protokoll löschen
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    bool      true
+ *
+ * @date  19.12.2019
+ ******************************************************************************/ 
 bool ATCmd_LogClear(const char* pszBuf)
 {
   SensorLog_Clear();
   return true;
+}
+
+bool ATCmd_DebugTest(const char* pszBuf)
+{
+  sprintf(AT_TXBUF, "+CDEBUG: 0-1\r\n");
+  AT_Send();
+  return true;
+}
+
+bool ATCmd_DebugRead(const char* pszBuf)
+{
+  sprintf(AT_TXBUF, "+CDEBUG: %d\r\n", (int)(eDataModeSrc == ATCmd_DataModeSrc_Debug));
+  AT_Send();
+  return true;
+}
+
+bool ATCmd_DebugWrite(const char* pszBuf)
+{
+  if (*pszBuf == '0')
+  {
+    if (eDataModeSrc == ATCmd_DataModeSrc_Debug)
+    {
+      eDataModeSrc = ATCmd_DataModeSrc_None;
+      bDataMode = false;
+      sprintf(AT_TXBUF, "+CDEBUG: 0\r\n");
+      AT_Send();
+      return true;
+    }
+    else
+    {
+      sprintf(AT_TXBUF, "+CDEBUG: not act\r\n");
+      AT_Send();
+      return false;
+    }
+  }
+  else if (*pszBuf == '1')
+  {
+    if (eDataModeSrc == ATCmd_DataModeSrc_None)
+    {
+      sprintf(AT_TXBUF, "+CDEBUG: 1\r\n");
+      AT_Send();
+      eDataModeSrc = ATCmd_DataModeSrc_Debug;
+      bDataMode = true;
+      return true;
+    }
+    else
+    {
+      sprintf(AT_TXBUF, "+CDEBUG: busy\r\n");
+      AT_Send();
+      return false;
+    }
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool ATCmd_FileTest(const char* pszBuf)
+{
+  sprintf(AT_TXBUF, "+CFILE: 0-2\r\n");
+  AT_Send();
+  return true;
+}
+
+bool ATCmd_FileRead(const char* pszBuf)
+{
+  FIL fp;
+  unsigned int num;
+  
+  if (f_open(&fp, "LOG.TXT", FA_READ | FA_OPEN_EXISTING) == FR_OK)
+  {
+    sprintf(AT_TXBUF, "+CFILE: %d\r\n", (int)f_size(&fp));
+    AT_Send();
+  
+    do {
+      if (f_read(&fp, AT_TXBUF, COMMLIB_UART1_MAX_BUF, &num) == FR_OK)
+      {
+        AT_Send();
+      }      
+    } while (num > 0);
+    f_close(&fp);
+    return true;
+  }
+  else
+  {
+    sprintf(AT_TXBUF, "+CFILE: fopen\r\n");
+    AT_Send();
+    return false;
+  }
+}
+
+bool ATCmd_FileWrite(const char* pszBuf)
+{
+  FIL fp;
+  DIR dp;
+  
+  if (*pszBuf == '0')
+  {
+    return true;
+  }
+  else if (*pszBuf == '1')
+  {
+    /* Datei leeren                                       */
+    if (f_open(&fp, "LOG.TXT", FA_WRITE | FA_CREATE_ALWAYS) == FR_OK)
+    {
+      f_close(&fp);
+      return true;
+    }
+    else
+    {
+      sprintf(AT_TXBUF, "+CFILE: fopen\r\n");
+      return false;
+    }
+  }
+  else if (*pszBuf == '2')
+  {
+    /* Datei umbenennen                                   */
+    char cHelp[28] = "";
+    int iRes;
+    int iNum;
+    FILINFO fno;
+    
+    iRes = f_opendir(&dp, "/");
+    if (iRes == FR_OK)
+    {
+      iNum = 0;
+      do
+      {
+        iRes = f_readdir(&dp, &fno);
+        if ((iRes == FR_OK) && ((fno.fattrib & AM_DIR) != 0))
+        {
+          ++iNum;
+        }
+      } while ((iRes == FR_OK) && (fno.fname[0] != '\0'));
+      f_closedir(&dp);
+    }
+    else
+    {
+      sprintf(AT_TXBUF, "+CFILE: fopendir %d\r\n", iRes);
+      AT_Send();
+      return false;
+    }
+    
+    sprintf(cHelp, "LOG_%04d.TXT", iNum);    
+    iRes = f_rename("LOG.TXT", cHelp);
+    if (iRes == FR_OK)
+    {
+      return true;
+    }
+    else
+    {
+      sprintf(AT_TXBUF, "+CFILE: frename %d (%s)\r\n", iRes, cHelp);
+      AT_Send();
+      return false;
+    }
+  }
+  else
+  {
+    return false;
+  }
 }

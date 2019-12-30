@@ -42,7 +42,7 @@ typedef struct tag_GPSHandler_Data {
     
     /*! HDOP in 0.01                                      */
     uint16_t uiHDOP;
-        
+    
     /*! Zeitsangabe gültig                                */
     bool bTimeValid;
     
