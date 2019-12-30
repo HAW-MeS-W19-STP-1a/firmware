@@ -35,6 +35,17 @@
 #define GPS_PWREN_PORT  GPIOD
 #define GPS_PWREN_PIN   GPIO_Pin_2
 
+#define BT_PWREN_PORT   GPIOD
+#define BT_PWREN_PIN    GPIO_Pin_3
+#define BT_STAT_PORT    GPIOD
+#define BT_STAT_PIN     GPIO_Pin_1
+#define BT_CMD_PORT     GPIOC
+#define BT_CMD_PIN      GPIO_Pin_4
+
+#define USART2_BT_PORT  GPIOC
+#define USART2_BT_RX_PIN    GPIO_Pin_3
+#define USART3_BT_TX_PIN    GPIO_Pin_2
+
 #define TIM3_ANEM_IN_PORT   GPIOB
 #define TIM3_ANEM_IN_PIN    GPIO_Pin_1
 
