@@ -175,15 +175,9 @@ void Tracking_Task1s(void)
     if (sSetpoint.bValid)
     {
       if (Motor_IsTurnReached() && Motor_IsTiltReached())
-      {
-        /* Ggf. Nachführen                                  */
-        Motor_SetTurnRef(sSensorQMC5883.sMeasure.uiAzimuth);
-        
-        if (Motor_IsTurnReached() && Motor_IsTiltReached())
-        {
-          /* Sollwert erreicht                                */
-          Motor_Cmd(false);
-        }
+      { 
+        /* Sollwert erreicht                                */
+        Motor_Cmd(false);
       }
     }
     else
@@ -205,11 +199,13 @@ void Tracking_Task1s(void)
 void Tracking_TaskWakeup(void)
 {
   if (bTrackingActive)
-  {
+  {    
     /* Neue Sollposition berechnen                        */
     if (Tracking_CalcSetpoint())
-    {
+    {      
       /* Neue Sollposition anfahren                       */
+      printf("Track: %d, %d\r\n", sSetpoint.iAzimuth, sSetpoint.iZenith);
+      
       Motor_SetTurn(sSetpoint.iAzimuth);
       Motor_SetTilt(sSetpoint.iZenith);
       if (!Motor_IsTiltReached() || !Motor_IsTurnReached())
@@ -235,7 +231,14 @@ void Tracking_TaskWakeup(void)
  ******************************************************************************/
 void Tracking_Cmd(bool bEnable)
 {
-  bTrackingActive = bEnable;
+  if (Motor_IsHomingActive())
+  {
+    Motor_Cmd(true);
+  }
+  else
+  {
+    bTrackingActive = bEnable;
+  }
 }
 
 /*!****************************************************************************

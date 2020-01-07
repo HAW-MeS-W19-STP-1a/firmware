@@ -16,7 +16,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-
 /*- Globale Variablen --------------------------------------------------------*/
 bool bDir;
 
@@ -89,7 +88,7 @@ void main(void)
    
   /* Blink Module init                                    */
   Blink_Init();
-  Blink_SetPattern(Blink_Led_SYS, 0x0001);
+  Blink_SetPattern(Blink_Led_SYS, 0x5555);
   
   /* ADC on PB2: Wind Vane                                */
   CLK_PeripheralClockConfig(CLK_Peripheral_ADC1, ENABLE);
@@ -123,7 +122,7 @@ void main(void)
   
   /* Motor controller                                     */
   Motor_Init();
-  Motor_Cmd(true);
+  Motor_Cmd(false);
   
   /* RTC init                                             */
   CLK_PeripheralClockConfig(CLK_Peripheral_RTC, ENABLE);
@@ -166,14 +165,18 @@ void main(void)
   sDate.RTC_Year = 19;
   RTC_SetDate(RTC_Format_BIN, &sDate);
   #endif /* STATIC_INIT_RTC */
-  
+
   #ifdef MOTORLIB_DEMO
-  Motor_SetTiltRef(0);
+  Motor_Cmd(true);
   Motor_SetTurnRef(0);
   Motor_SetTurn(450);
+  Motor_SetTilt(900);
   bDir = true;
   #endif /* MOTORLIB_DEMO */
   
+  /* Sun Tracking                                         */
+  Tracking_Init();
+   
   /* Enable interrupt execution                           */
   enableInterrupts();
   printf("Program started\r\n");
@@ -184,14 +187,18 @@ void main(void)
   printf(" OK\r\nQMC5883 init...");
   QMC5883_Init(&sSensorQMC5883, 0x0D);
   QMC5883_SetRefTemp(&sSensorQMC5883, 3400);
+  QMC5883_Update(&sSensorQMC5883);
   printf(" OK\r\nMPU6050 init...");
   MPU6050_Init(&sSensorMPU6050, 0x68, false);
   printf(" OK\r\nWind Timer + ADC init...");
   Wind_Init(&sSensorWind, 1000); 
   printf(" OK\r\nCPU Temp init...");
   CPUTemp_Init(&sSensorCPUTemp);
-  printf(" OK\r\n");
+  printf(" OK\r\nMotor init...");
   I2CMaster_DeInit();
+  Motor_SetTurnRef(sSensorQMC5883.sMeasure.uiAzimuth);
+  Motor_SetTurn(sSensorQMC5883.sMeasure.uiAzimuth);
+  printf(" OK\r\n");
   
   printf("SD-Card init...");
   if (f_mount(&fs, "", 0) == FR_OK)
@@ -202,6 +209,8 @@ void main(void)
   {
     printf(" FAIL\r\n");
   }
+  
+  Blink_SetPattern(Blink_Led_SYS, 0x0001);
   
   #ifdef FATFS_DEMO
   printf("SD-Card init...");
@@ -251,7 +260,24 @@ void main(void)
       /* Wind-Mittelwert und -Böen auswerten              */
       Wind_UpdateSpd(&sSensorWind);
       
+      /* Winkel aktualisieren                             */
+      I2CMaster_Init();
+      MPU6050_Update(&sSensorMPU6050);
+      QMC5883_Update(&sSensorQMC5883);
+      I2CMaster_DeInit();
+      
+      /* Tracking                                         */
+      Tracking_Task1s();
+      printf("Align: %d, %d\r\n", sSensorQMC5883.sMeasure.uiAzimuth, sSensorMPU6050.sMeasure.sAngle.iXZ);
+      
+      /* Blauen Taster für Bluetooth-Weckfunktion         */
+      if (!GPIO_ReadInputDataBit(BTN_BLUE_PORT, BTN_BLUE_PIN))
+      {
+        BTHandler_TakeWakeup();
+      }
       BTHandler_Task1s();
+      
+      /* Blink Pattern für 1s-Task                        */
       if (Blink_Ready(Blink_Led_SYS))
       {
         Blink_SetPattern(Blink_Led_SYS, 0x0001);
@@ -268,6 +294,11 @@ void main(void)
       if (Motor_IsTurnReached())
       {
         Motor_SetTurn(bDir ? 0 : 450);
+        if (Motor_IsTiltReached())
+        {
+          Motor_SetTilt(bDir ? 0 : 900);
+          bDir = !bDir;
+        }
       }
       #endif /* MOTORLIB_DEMO */
       
@@ -283,6 +314,9 @@ void main(void)
       /* Bluetooth / GPS aufwecken                        */
       BTHandler_TakeWakeup();
       GPSHandler_TaskWakeup();
+      
+      /* Ausrichtung starten                              */
+      Tracking_TaskWakeup();
       
       /* Sensordaten speichern                            */
       SaveSensors();
@@ -321,7 +355,7 @@ void main(void)
     }
         
     /* Fertig - auf nächsten Interrupt warten             */
-    wfi();
+    //wfi();
   }
 }
 

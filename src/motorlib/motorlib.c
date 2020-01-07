@@ -83,6 +83,9 @@ volatile uint8_t ucLimitHit;
 *******************************************************************************/ 
 static void Motor_CmdTilt(Motor_Direction eDir)
 {
+  uint8_t ucLimitState = (GPIO_ReadInputData(GPIOB) & 0x18) | ucLimitHit;
+  ucLimitHit = 0;
+  
   /* Freigabe prüfen                                      */
   if (bMotorEnable && !bMotorStop)
   {
@@ -91,19 +94,31 @@ static void Motor_CmdTilt(Motor_Direction eDir)
     {
       case Motor_Direction_A:
         /* Endlagenschalter für Drehrichtung A auswerten  */
-        if (ucLimitHit & MOT_LIM_A)
+        if (!(ucLimitState & MOT_LIM_A))
         {
           GPIO_WriteBit(GPIOF, GPIO_Pin_7, true);
+          GPIO_WriteBit(GPIOF, GPIO_Pin_6, false);
+        }
+        else
+        {
+          /* Stopp */
+          GPIO_WriteBit(GPIOF, GPIO_Pin_7, false);
           GPIO_WriteBit(GPIOF, GPIO_Pin_6, false);
         }
         break;
         
       case Motor_Direction_B:
         /* Endlagenschalter für Drehrichtung B auswerten  */
-        if (ucLimitHit & MOT_LIM_B)
+        if (!(ucLimitState & MOT_LIM_B))
         {
           GPIO_WriteBit(GPIOF, GPIO_Pin_7, false);
           GPIO_WriteBit(GPIOF, GPIO_Pin_6, true);
+        }
+        else
+        {
+          /* Stopp */
+          GPIO_WriteBit(GPIOF, GPIO_Pin_7, false);
+          GPIO_WriteBit(GPIOF, GPIO_Pin_6, false);
         }
         break;
         
@@ -127,7 +142,7 @@ static void Motor_CmdTilt(Motor_Direction eDir)
 static void Motor_CmdTurn(Motor_Direction eDir)
 {
   /* Freigabe prüfen                                      */
-  if (bMotorEnable && !bMotorStop)
+  if (bMotorEnable && !bMotorStop && Motor_IsTiltReached())
   {
     /* Soll-Drehrichtung auswerten                        */
     switch (eDir)
@@ -152,6 +167,11 @@ static void Motor_CmdTurn(Motor_Direction eDir)
         break;
     }
   }
+  else
+  {
+    GPIO_WriteBit(GPIOF, GPIO_Pin_5, false);
+    GPIO_WriteBit(GPIOF, GPIO_Pin_4, false);
+  }
 }
 
 /*!****************************************************************************
@@ -165,12 +185,14 @@ static void Motor_CmdTurn(Motor_Direction eDir)
  ******************************************************************************/
 static void Motor_HomingTask(void)
 {
+  Blink_SetPattern(Blink_Led_MOT, 0xFF01);
+  
   /* Freigabe prüfen                                      */
   if (bMotorEnable && !bMotorStop)
   {
     /* Aktuellen Zustand der Endlagenschalter auswerten   *
      * und mit eventuellem Ergebnis aus ISR verodern      */
-    uint8_t ucLimitState = (~GPIO_ReadInputData(GPIOB) & 0x18) | ucLimitHit;
+    uint8_t ucLimitState = (GPIO_ReadInputData(GPIOB) & 0x18) | ucLimitHit;
     
     /* Endlagenschalterzustand auswerten                  */
     if (ucLimitState)
@@ -178,8 +200,9 @@ static void Motor_HomingTask(void)
       /* Referenzfahrt beendet                            */
       bHomingActive = false;
       Motor_CmdTilt(Motor_Direction_Stop);
+      Blink_SetPattern(Blink_Led_MOT, 0x0005);
       
-      if (!(ucLimitState & MOT_LIM_B))
+      if (ucLimitState & MOT_LIM_B)
       {
         /* Endlagenschalter am B-Ende ausgelöst           */
         iTiltAct = 0;
@@ -281,7 +304,7 @@ void Motor_Init(void)
   GPIO_Init(BTN_STOP_PORT, BTN_STOP_PIN, GPIO_Mode_In_PU_IT); // Nothalt
   GPIO_Init(LIM_PORT, LIM_A_PIN, GPIO_Mode_In_PU_IT); // Limit A
   GPIO_Init(LIM_PORT, LIM_B_PIN, GPIO_Mode_In_PU_IT); // Limit B
-  EXTI_SetPortSensitivity(EXTI_Port_B, EXTI_Trigger_Falling);
+  EXTI_SetPortSensitivity(EXTI_Port_B, EXTI_Trigger_Rising);
   EXTI_SelectPort(EXTI_Port_B);
   EXTI_SetHalfPortSelection(EXTI_HalfPort_B_LSB, ENABLE);
   EXTI_SetHalfPortSelection(EXTI_HalfPort_B_MSB, ENABLE);
@@ -319,6 +342,10 @@ void Motor_Cmd(bool bEnable)
   else
   {
     Blink_SetPattern(Blink_Led_MOT, 0x0000);
+    
+    /* Anhalten */
+    GPIO_ResetBits(GPIOF, GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7);
+    GPIO_ResetBits(GPIOD, GPIO_Pin_4);
   }
 }
 
@@ -407,19 +434,14 @@ void Motor_Task100ms(void)
  ******************************************************************************/
 @far @interrupt void Motor_LimitInterruptHandler(void)
 {
-  register uint8_t ucInBuf = ~GPIO_ReadInputData(GPIOB);
+  register uint8_t ucInBuf = GPIO_ReadInputData(GPIOB);
   
   EXTI_ClearITPendingBit(EXTI_IT_PortB);
   
-  if (ucInBuf & MOT_LIM_A)
+  if (ucInBuf & (MOT_LIM_A | MOT_LIM_B))
   {
     /* Limit Switch A ausgelöst                           */
     GPIO_WriteBit(GPIOF, GPIO_Pin_7, false);
-  }
-
-  if (ucInBuf & MOT_LIM_B)
-  {
-    /* Limit Switch B ausgelöst                           */
     GPIO_WriteBit(GPIOF, GPIO_Pin_6, false);
   }
   
@@ -457,4 +479,9 @@ bool Motor_IsTiltReached(void)
 {
   int16_t iDelta = iTiltSet - iTiltAct;
   return (abs(iDelta) <= MOTORLIB_MIN_ANGLE);
+}
+
+bool Motor_IsHomingActive(void)
+{
+  return bHomingActive;
 }

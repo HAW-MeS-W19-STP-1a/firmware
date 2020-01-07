@@ -17,13 +17,13 @@
 
 /*- Symbolische Konstanten ---------------------------------------------------*/
 /*! Turm-Drehgeschwindigkeit in 0.1°/100ms                                    */
-#define MOTORLIB_TURN_SPD     2
+#define MOTORLIB_TURN_SPD     5
 
 /*! Panel-Drehgeschwindigket in 0.1°/100ms                                    */
-#define MOTORLIB_TILT_SPD     2
+#define MOTORLIB_TILT_SPD     30
 
 /*! Mindest-Drehwinkel in 0.1°                                                */
-#define MOTORLIB_MIN_ANGLE    10
+#define MOTORLIB_MIN_ANGLE    30
 
 
 /*- Funktionsprototypen ------------------------------------------------------*/
@@ -41,5 +41,7 @@ int16_t Motor_GetTilt(void);
 
 bool Motor_IsTurnReached(void);
 bool Motor_IsTiltReached(void);
+
+bool Motor_IsHomingActive(void);
 
 #endif /* MOTORLIB_H_ */
