@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "SolarTracking.h"
+#include "SolarTracking_Internal.h"
 
 
 void sunazzd(

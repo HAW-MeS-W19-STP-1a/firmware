@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SOLARTRACKING_INTERNAL_H_
+#define SOLARTRACKING_INTERNAL_H_
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -245,3 +246,5 @@ void calculate_sunrise_and_fall(int year, int month, int day, double time_zone_d
 void calculate_current_sun_position(int year, int month, int day, double lstdt_dec,
 	double time_zone_dec, double stn_lat_dec, double stn_long_dec, double* azimuth,
 	double* zenith);
+  
+#endif /* #ifndef SOLARTRACKING_INTERNAL_H_ */

@@ -1,6 +1,7 @@
 #ifndef USERLIB_ATCMD_CMDFUNC_H_
 #define USERLIB_ATCMD_CMDFUNC_H_
 
+/*- Headerdateien ------------------------------------------------------------*/
 #include <stdbool.h>
 
 
@@ -50,5 +51,9 @@ bool ATCmd_DebugWrite(const char* pszBuf);
 bool ATCmd_FileTest(const char* pszBuf);
 bool ATCmd_FileRead(const char* pszBuf);
 bool ATCmd_FileWrite(const char* pszBuf);
+
+bool ATCmd_TrackTest(const char* pszBuf);
+bool ATCmd_TrackRead(const char* pszBuf);
+bool ATCmd_TrackWrite(const char* pszBuf);
 
 #endif /* USERLIB_ATCMD_CMDFUNC_H_ */

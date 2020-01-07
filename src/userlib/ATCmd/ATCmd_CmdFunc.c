@@ -15,6 +15,7 @@
 #include "commlib.h"
 #include "app_sensors.h"
 #include "sensorlog.h"
+#include "SolarTracking.h"
 #include "ff.h"
 #include "ATCmd.h"
 #include "ATCmd_CmdFunc.h"
@@ -683,6 +684,15 @@ bool ATCmd_LogClear(const char* pszBuf)
   return true;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Test-Befehl für "AT+CDEBUG"
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    bool      true
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
 bool ATCmd_DebugTest(const char* pszBuf)
 {
   sprintf(AT_TXBUF, "+CDEBUG: 0-1\r\n");
@@ -690,6 +700,15 @@ bool ATCmd_DebugTest(const char* pszBuf)
   return true;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Aktivierungsstatus der Debug-Umleitung anzeigen
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    bool      true
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
 bool ATCmd_DebugRead(const char* pszBuf)
 {
   sprintf(AT_TXBUF, "+CDEBUG: %d\r\n", (int)(eDataModeSrc == ATCmd_DataModeSrc_Debug));
@@ -697,6 +716,15 @@ bool ATCmd_DebugRead(const char* pszBuf)
   return true;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Umleitung der Debug-Ausgabe an die Bluetooth-Verbindung 
+ *
+ * @param[in] *pszBuf   Aktivierungszustand '0' oder '1'
+ * @return    bool      true, wenn Umleitung erfolgreich
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
 bool ATCmd_DebugWrite(const char* pszBuf)
 {
   if (*pszBuf == '0')
@@ -739,6 +767,15 @@ bool ATCmd_DebugWrite(const char* pszBuf)
   }
 }
 
+/*!****************************************************************************
+ * @brief
+ * Test-Befehl für "AT+CFILE"
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    bool      true
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
 bool ATCmd_FileTest(const char* pszBuf)
 {
   sprintf(AT_TXBUF, "+CFILE: 0-2\r\n");
@@ -746,6 +783,15 @@ bool ATCmd_FileTest(const char* pszBuf)
   return true;
 }
 
+/*!****************************************************************************
+ * @brief
+ * Inhalt der Logdatei auslesen und über Bluetooth ausgeben
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    bool      true, wenn Lesen erfolgreich
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
 bool ATCmd_FileRead(const char* pszBuf)
 {
   FIL fp;
@@ -773,6 +819,15 @@ bool ATCmd_FileRead(const char* pszBuf)
   }
 }
 
+/*!****************************************************************************
+ * @brief
+ * Logdatei leeren oder umbenennen
+ *
+ * @param[in] *pszBuf   Befehlsargument
+ * @return    bool      true, wenn Befehl erfolgreich ausgeführt
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
 bool ATCmd_FileWrite(const char* pszBuf)
 {
   FIL fp;
@@ -837,6 +892,65 @@ bool ATCmd_FileWrite(const char* pszBuf)
       AT_Send();
       return false;
     }
+  }
+  else
+  {
+    return false;
+  }
+}
+
+/*!****************************************************************************
+ * @brief
+ * Test-Befehl für "AT+CTRACK"
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    bool      true
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
+bool ATCmd_TrackTest(const char* pszBuf)
+{
+  sprintf(AT_TXBUF, "+CTRACK: 0-1\r\n");
+  AT_Send();
+  return true;
+}
+
+/*!****************************************************************************
+ * @brief
+ * Aktivierungszustand des Tracking-Moduls anzeigen *
+ *
+ * @param[in] *pszBuf   Nicht genutzt
+ * @return    true
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
+bool ATCmd_TrackRead(const char* pszBuf)
+{
+  sprintf(AT_TXBUF, "+CTRACK: %d\r\n", (int)Tracking_IsEnabled());
+  AT_Send();
+  return true;
+}
+
+/*!****************************************************************************
+ * @brief
+ * Nachführung des Panels nach der Sonnenposition (de-)aktivieren
+ *
+ * @param[in] *pszBuf   Befehlsargument
+ * @return    bool      true, wenn Befehl erfolgreich ausgeführt
+ *
+ * @date  30.12.2019
+ ******************************************************************************/
+bool ATCmd_TrackWrite(const char* pszBuf)
+{
+  if (*pszBuf == '1')
+  {
+    Tracking_Cmd(true);
+    return true;
+  }
+  else if (*pszBuf == '0')
+  {
+    Tracking_Cmd(false);
+    return true;
   }
   else
   {
