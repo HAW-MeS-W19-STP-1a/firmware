@@ -15,5 +15,6 @@
 #include "sensorlib_mpu6050.h"
 #include "sensorlib_qmc5883.h"
 #include "sensorlib_wind.h"
+#include "sensorlib_power.h"
 
 #endif /* SENSORLIB_H_ */

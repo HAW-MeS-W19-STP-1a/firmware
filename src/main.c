@@ -16,6 +16,23 @@
 #include <stdbool.h>
 #include <string.h>
 
+
+/*- Symbolische Konstanten ---------------------------------------------------*/
+/*! @brief Kalibrierungswerte für die Strom- und Spannungsmessung
+ *
+ * Berechnung über:
+ *  ((volt_in*1000) / voltraw) * 1024
+ *  1/(0.185 * (4096/3300)) * 1024
+ * @{                                                                         */
+#define UBAT_SLOPE_CAL  3724          /* UBAT Kennlinie                       */
+#define IBAT_ZERO_OFFS  2032          /* Nullpunktabgleich für IBAT           */
+#define IBAT_SLOPE_CAL  -4459         /* Kennlinie für IBAT                   */
+#define UPV_SLOPE_CAL   3767          /* UPV Kennlinie                        */
+#define IPV_ZERO_OFFS   2032         /* Nullpunktabgleich für IPV            */
+#define IPV_SLOPE_CAL   4459          /* Kennlinie für IPV                    */
+/*! @}                                                                        */
+
+
 /*- Globale Variablen --------------------------------------------------------*/
 bool bDir;
 
@@ -51,6 +68,12 @@ QMC5883_Sensor sSensorQMC5883;
 
 /*! Sensordaten vom MPU6050 Accelerometer / Gyro                              */
 MPU6050_Sensor sSensorMPU6050;
+
+/*! Ladestrom und Batteriespannung                                            */
+Power_Sensor sSensorPBAT;
+
+/*! Solarstrom und Panelspannung                                              */
+Power_Sensor sSensorPPV;
 
 /*! Handle für Dateisystem                                                    */
 FATFS fs;
@@ -119,7 +142,7 @@ void main(void)
   
   /* Messwerteprotokoll initialisieren                    */
   SensorLog_Init();
-  
+   
   /* Motor controller                                     */
   Motor_Init();
   Motor_Cmd(false);
@@ -194,6 +217,18 @@ void main(void)
   Wind_Init(&sSensorWind, 1000); 
   printf(" OK\r\nCPU Temp init...");
   CPUTemp_Init(&sSensorCPUTemp);
+  printf(" OK\r\nPBAT init...");
+  Power_Init(&sSensorPBAT, ADC1_IBAT_IN3_CH, ADC1_UBAT_IN1_CH, \
+    ADC1_IBAT_IN3_PORT, ADC1_IBAT_IN3_PIN, \
+    ADC1_UBAT_IN1_PORT, ADC1_UBAT_IN1_PIN);
+  Power_SetVoltRef(&sSensorPBAT, UBAT_SLOPE_CAL);
+  Power_SetCurrRef(&sSensorPBAT, IBAT_ZERO_OFFS, IBAT_SLOPE_CAL);
+  printf(" OK\r\nPPV init...");
+  Power_Init(&sSensorPPV, ADC1_IPV_IN0_CH, ADC1_UPV_IN2_CH, \
+    ADC1_IPV_IN0_PORT, ADC1_IPV_IN0_PIN, \
+    ADC1_UPV_IN2_PORT, ADC1_UPV_IN2_PIN);
+  Power_SetVoltRef(&sSensorPPV, UPV_SLOPE_CAL);
+  Power_SetCurrRef(&sSensorPPV, IPV_ZERO_OFFS, IPV_SLOPE_CAL);
   printf(" OK\r\nMotor init...");
   I2CMaster_DeInit();
   Motor_SetTurnRef(sSensorQMC5883.sMeasure.uiAzimuth);
@@ -255,7 +290,7 @@ void main(void)
     if (bTask1sFlag)
     {
       bTask1sFlag = false;
-      printf("Task1s\r\n");
+      //printf("Task1s\r\n");
       
       /* Wind-Mittelwert und -Böen auswerten              */
       Wind_UpdateSpd(&sSensorWind);
@@ -266,9 +301,14 @@ void main(void)
       QMC5883_Update(&sSensorQMC5883);
       I2CMaster_DeInit();
       
+      /* Spannungen messen                                */
+      Power_Update(&sSensorPBAT);
+      Power_Update(&sSensorPPV);
+      
       /* Tracking                                         */
       Tracking_Task1s();
-      printf("Align: %d, %d\r\n", sSensorQMC5883.sMeasure.uiAzimuth, sSensorMPU6050.sMeasure.sAngle.iXZ);
+      printf("Align: %d, %d, %d\r\n", sSensorQMC5883.sRaw.iRawX, sSensorQMC5883.sRaw.iRawY, sSensorQMC5883.sMeasure.uiAzimuth);
+      //printf("Pwr: %d, %d, %d, %d\r\n", sSensorPBAT.sMeasure.iCurr, sSensorPBAT.sMeasure.uiVolt, sSensorPPV.sMeasure.iCurr, sSensorPPV.sMeasure.uiVolt);
       
       /* Blauen Taster für Bluetooth-Weckfunktion         */
       if (!GPIO_ReadInputDataBit(BTN_BLUE_PORT, BTN_BLUE_PIN))
@@ -287,7 +327,7 @@ void main(void)
     if (bTaskWakeupFlag)
     {      
       bTaskWakeupFlag = false;
-      printf("TaskWakeup\r\n");
+      //printf("TaskWakeup\r\n");
       Blink_SetPattern(Blink_Led_SYS, 0x005F);
       
       #ifdef MOTORLIB_DEMO
@@ -309,6 +349,8 @@ void main(void)
       MPU6050_Update(&sSensorMPU6050);
       Wind_UpdateDir(&sSensorWind);
       CPUTemp_Update(&sSensorCPUTemp);
+      Power_Update(&sSensorPBAT);
+      Power_Update(&sSensorPPV);
       I2CMaster_DeInit();
       
       /* Bluetooth / GPS aufwecken                        */
@@ -389,10 +431,10 @@ void SaveSensors(void)
   pLog->sPosition.lLat = sSensorGPS.sPosition.lLat;
   pLog->sPosition.lLong = sSensorGPS.sPosition.lLong;
   pLog->sPosition.iAlt = sSensorGPS.sPosition.iAlt;
-  pLog->sPower.uiBatVolt = 0;
-  pLog->sPower.uiPanelVolt = 0;
-  pLog->sPower.iBatCurr = 0;
-  pLog->sPower.iPanelCurr = 0;
+  pLog->sPower.uiBatVolt = sSensorPBAT.sMeasure.uiVolt;
+  pLog->sPower.uiPanelVolt = sSensorPPV.sMeasure.uiVolt;
+  pLog->sPower.iBatCurr = sSensorPBAT.sMeasure.iCurr;
+  pLog->sPower.iPanelCurr = sSensorPPV.sMeasure.iCurr;
   
   /* Auf SD-Karte schreiben                               */
   printf("WriteLog...");
