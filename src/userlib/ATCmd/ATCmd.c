@@ -41,7 +41,8 @@ static const ATCmd_CbConf asCommands[] = {
   {"CLOG",    ATCmd_OK,       0,                0,                ATCmd_LogClear},
   {"CDEBUG",  ATCmd_DebugTest,ATCmd_DebugRead,  ATCmd_DebugWrite, 0},
   {"CFILE",   ATCmd_FileTest, ATCmd_FileRead,   ATCmd_FileWrite,  0},
-  {"CTRACK",  ATCmd_TrackTest,ATCmd_TrackRead,  ATCmd_TrackWrite, 0}
+  {"CTRACK",  ATCmd_TrackTest,ATCmd_TrackRead,  ATCmd_TrackWrite, 0},
+  {"CTURN",   0,              0,                ATCmd_TurnWrite,  0}
 };
 #define NUM_ATCMD_CONF (sizeof(asCommands)/sizeof(*asCommands))
 

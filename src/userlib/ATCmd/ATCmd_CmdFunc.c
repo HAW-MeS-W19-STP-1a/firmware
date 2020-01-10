@@ -16,6 +16,7 @@
 #include "app_sensors.h"
 #include "sensorlog.h"
 #include "SolarTracking.h"
+#include "motorlib.h"
 #include "ff.h"
 #include "ATCmd.h"
 #include "ATCmd_CmdFunc.h"
@@ -642,10 +643,10 @@ bool ATCmd_GuiRead(const char* pszBuf)
     
     /* Leistungsmessdaten                                 */
     sprintf(AT_TXBUF, "%d,%d,%d,%d,%d\r\n",
-      pLog->sPower.uiBatVolt,
-      pLog->sPower.iBatCurr,
-      pLog->sPower.uiPanelVolt,
-      pLog->sPower.iPanelCurr,
+      pLog->sPower.uiBatVolt / 10,
+      pLog->sPower.iBatCurr / 10,
+      pLog->sPower.uiPanelVolt / 10,
+      pLog->sPower.iPanelCurr / 10,
       330
     );
     AT_Send();
@@ -955,5 +956,39 @@ bool ATCmd_TrackWrite(const char* pszBuf)
   else
   {
     return false;
+  }
+}
+
+bool ATCmd_TurnWrite(const char* pszBuf)
+{
+  if (*pszBuf == '0')
+  {
+    Motor_Cmd(false);
+    return true;
+  }
+  else if (*pszBuf == 'C')
+  {
+    Motor_SetTurnRef(0);
+    Motor_SetTurn(3000);
+    Motor_Cmd(true);
+    QMC5883_StartCal(&sSensorQMC5883);
+    return true;
+  }
+  else
+  {
+    int iTurn = atoi(pszBuf);
+    while (iTurn > 3600)
+    {
+      iTurn -= 3600;
+    }
+    if (iTurn < 0)
+    {
+      iTurn += 3600;
+    }
+    Motor_SetTurn(iTurn);
+    Motor_Cmd(true);
+    sprintf(AT_TXBUF, "+CTURN: %d\r\n", iTurn);
+    AT_Send();
+    return true;
   }
 }

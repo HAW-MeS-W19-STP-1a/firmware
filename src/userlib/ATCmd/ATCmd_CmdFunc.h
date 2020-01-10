@@ -56,4 +56,6 @@ bool ATCmd_TrackTest(const char* pszBuf);
 bool ATCmd_TrackRead(const char* pszBuf);
 bool ATCmd_TrackWrite(const char* pszBuf);
 
+bool ATCmd_TurnWrite(const char* pszBuf);
+
 #endif /* USERLIB_ATCMD_CMDFUNC_H_ */
