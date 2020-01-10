@@ -23,7 +23,7 @@
 #define MOTORLIB_TILT_SPD     30
 
 /*! Mindest-Drehwinkel in 0.1°                                                */
-#define MOTORLIB_MIN_ANGLE    30
+#define MOTORLIB_MIN_ANGLE    50
 
 
 /*- Funktionsprototypen ------------------------------------------------------*/
