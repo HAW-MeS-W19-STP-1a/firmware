@@ -277,9 +277,9 @@ void QMC5883_GetSensorData(QMC5883_Sensor* pSensor)
 
 /*!****************************************************************************
  * @brief
- * Kompassrichtung auf x/y-Ebene berechnen
+ * Kompassrichtung auf x/z-Ebene berechnen
  *
- * Berechnet die Kompassrichtung mittels atan2 aus den X- und Y-Vektoren der
+ * Berechnet die Kompassrichtung mittels atan2 aus den X- und Z-Vektoren der
  * Magnetfeldstärke. Um genau zu sein, muss die Z-Achse senkrecht zum Boden
  * stehen, da ohne Beschleunigungssensor keine Pitch Kompensation möglich ist.
  *
@@ -291,8 +291,19 @@ void QMC5883_GetSensorData(QMC5883_Sensor* pSensor)
  ******************************************************************************/
 uint16_t QMC5883_CalcAzimuth(QMC5883_Sensor* pSensor)
 {
-  int iAzimuth = atan2(pSensor->sRaw.iRawY, pSensor->sRaw.iRawX) * 573;
-  return (uint16_t)(iAzimuth < 0 ? iAzimuth + 3600 : iAzimuth);
+  /*int iAzimuth = 1800 + atan2(pSensor->sRaw.iRawX, pSensor->sRaw.iRawY) * 573;
+  while (iAzimuth >= 3600)
+  {
+    iAzimuth -= 3600;
+  }*/
+  float fX = (pSensor->sRaw.iRawX - pSensor->sCalib.fXComp) * pSensor->sCalib.fXGain;
+  float fY = (pSensor->sRaw.iRawY - pSensor->sCalib.fYComp) * pSensor->sCalib.fYGain;
+  int iAzimuth = 3600 + 1800 - 900 + atan2(fX, fY) * 573;
+  while (iAzimuth > 3600)
+  {
+    iAzimuth -= 3600;
+  }
+  return (uint16_t)iAzimuth;
 }
 
 /*!****************************************************************************
@@ -307,4 +318,29 @@ uint16_t QMC5883_CalcAzimuth(QMC5883_Sensor* pSensor)
 int16_t QMC5883_CalcTemperature(QMC5883_Sensor* pSensor)
 {
   return pSensor->sRaw.iRawTemp + pSensor->sCalib.iRefTemp;
+}
+
+void QMC5883_HandleCalData(QMC5883_Sensor* pSensor)
+{
+  pSensor->sCalib.fXComp += pSensor->sRaw.iRawX;
+  pSensor->sCalib.fYComp += pSensor->sRaw.iRawY;
+  if (pSensor->sRaw.iRawX > pSensor->sCalib.iXMax)
+  {
+    pSensor->sCalib.iXMax = pSensor->sRaw.iRawX;
+  }
+  else if (pSensor->sRaw.iRawX < pSensor->sCalib.iXMin)
+  {
+    pSensor->sCalib.iXMin = pSensor->sRaw.iRawX;
+  }
+  
+  if (pSensor->sRaw.iRawY > pSensor->sCalib.iYMax)
+  {
+    pSensor->sCalib.iYMax = pSensor->sRaw.iRawY;
+  }
+  else if (pSensor->sRaw.iRawY < pSensor->sCalib.iYMin)
+  {
+    pSensor->sCalib.iYMin = pSensor->sRaw.iRawY;
+  }
+  
+  ++pSensor->sCalib.uiNumComp;
 }

@@ -11,6 +11,12 @@
 #include "powerlib.h"
 #include "sensorlib_qmc5883_internal.h"
 #include "sensorlib_qmc5883.h"
+#include "motorlib.h"
+#include <stdio.h>
+
+
+/*- Makros -------------------------------------------------------------------*/
+#define abs(x)  ((x < 0) ? (-x) : (x))
 
 
 /*!****************************************************************************
@@ -30,6 +36,11 @@ void QMC5883_Init(QMC5883_Sensor* pSensor, uint8_t ucSlaveAddr)
   {
     *((uint8_t*)pSensor + ucIndex) = 0;
   }
+  pSensor->sCalib.fXComp = -1140.0;
+  pSensor->sCalib.fYComp = -830.0;
+  pSensor->sCalib.fXGain = 0.8921;
+  pSensor->sCalib.fYGain = 0.7746;
+  pSensor->sCalib.uiNumComp = 0;
   
   /* Slaveadresse abspeichern                             */
   pSensor->ucSlaveAddr = ucSlaveAddr;
@@ -37,6 +48,10 @@ void QMC5883_Init(QMC5883_Sensor* pSensor, uint8_t ucSlaveAddr)
   /* Sensor ID prüfen                                     */
   QMC5883_SoftReset(pSensor);
   while (QMC5883_GetChipID(pSensor) != 0xFF) { Power_Wait(); }
+  
+  QMC5883_SetSRST(pSensor, 0x01);
+  QMC5883_Configure(pSensor, false, false, QMC5883_Oversampling_512, QMC5883_Range_2G, QMC5883_DataRate_10Hz);
+  QMC5883_SetMode(pSensor, QMC5883_Mode_CONT);
 }
 
 /*!****************************************************************************
@@ -50,14 +65,29 @@ void QMC5883_Init(QMC5883_Sensor* pSensor, uint8_t ucSlaveAddr)
  ******************************************************************************/
 void QMC5883_Update(QMC5883_Sensor* pSensor)
 {
+  /*
   QMC5883_SetSRST(pSensor, 0x01);
-  QMC5883_Configure(pSensor, false, false, QMC5883_Oversampling_64, QMC5883_Range_8G, QMC5883_DataRate_10Hz);
-  QMC5883_SetMode(pSensor, QMC5883_Mode_CONT);
+  QMC5883_Configure(pSensor, false, false, QMC5883_Oversampling_512, QMC5883_Range_2G, QMC5883_DataRate_10Hz);
+  QMC5883_SetMode(pSensor, QMC5883_Mode_CONT);*/
   while (!QMC5883_IsDataReady(pSensor));
   QMC5883_GetSensorData(pSensor);
   pSensor->sMeasure.uiAzimuth = QMC5883_CalcAzimuth(pSensor);
   pSensor->sMeasure.iTemperature = QMC5883_CalcTemperature(pSensor);
-  QMC5883_SoftReset(pSensor);
+  /*QMC5883_SoftReset(pSensor);*/
+  
+  if (pSensor->bCalActive)
+  {
+    QMC5883_HandleCalData(pSensor);
+    if (Motor_IsTurnReached())
+    {
+      pSensor->bCalActive = false;
+      pSensor->sCalib.fXComp = pSensor->sCalib.fXComp / (float)pSensor->sCalib.uiNumComp;
+      pSensor->sCalib.fYComp = pSensor->sCalib.fYComp / (float)pSensor->sCalib.uiNumComp;
+      pSensor->sCalib.fXGain = 2.0 / (float)abs(pSensor->sCalib.iXMax - pSensor->sCalib.iXMin);
+      pSensor->sCalib.fYGain = 2.0 / (float)abs(pSensor->sCalib.iYMax - pSensor->sCalib.iYMin);
+      printf("CAL: %d, %d, %d, %d, %d, %d, %d, %d\r\n", (int)pSensor->sCalib.fXComp, (int)pSensor->sCalib.fYComp, pSensor->sCalib.iXMax, pSensor->sCalib.iXMin, pSensor->sCalib.iYMax, pSensor->sCalib.iYMin, (int)pSensor->sCalib.fXGain * 10000, (int)pSensor->sCalib.fYGain * 10000);
+    }
+  }
 }
 
 /*!****************************************************************************
@@ -77,4 +107,16 @@ void QMC5883_Update(QMC5883_Sensor* pSensor)
 void QMC5883_SetRefTemp(QMC5883_Sensor* pSensor, int16_t iRefTemp)
 {
   pSensor->sCalib.iRefTemp = iRefTemp;
+}
+
+void QMC5883_StartCal(QMC5883_Sensor* pSensor)
+{
+  pSensor->bCalActive = true;
+  pSensor->sCalib.fXComp = 0.0;
+  pSensor->sCalib.fYComp = 0.0;
+  pSensor->sCalib.iXMax = -32768;
+  pSensor->sCalib.iXMin = 32767;
+  pSensor->sCalib.iYMax = -32768;
+  pSensor->sCalib.iXMin = 32767;
+  pSensor->sCalib.uiNumComp = 0;
 }

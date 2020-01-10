@@ -12,6 +12,7 @@
 
 /*- Headerdateien ------------------------------------------------------------*/
 #include <stdint.h>
+#include <stdbool.h>
 
 
 /*- Symbolische Konstanten ---------------------------------------------------*/
@@ -34,7 +35,27 @@ typedef struct tag_QMC5883_Sensor {
   struct {
     /*! Referenztemperatur in 0.1°C                       */
     int16_t iRefTemp;
+    
+    /*! X-Kompensation                                    */
+    float fXComp;
+    
+    /*! Y-Kompensation                                    */
+    float fYComp;
+    
+    int16_t iXMin;
+    int16_t iXMax;
+    int16_t iYMin;
+    int16_t iYMax;
+    
+    float fXGain;
+    float fYGain;
+    
+    /*! Anzahl der Messpunkte für die Kompensation        */
+    uint16_t uiNumComp;
   } sCalib;
+  
+  /*! Kalibrierung aktiv                                  */
+  bool bCalActive;
   
   /*! Rohdaten                                            */
   struct {
@@ -66,5 +87,7 @@ typedef struct tag_QMC5883_Sensor {
 void QMC5883_Init(QMC5883_Sensor* pSensor, uint8_t ucSlaveAddr);
 void QMC5883_Update(QMC5883_Sensor* pSensor);
 void QMC5883_SetRefTemp(QMC5883_Sensor* pSensor, int16_t iRefTemp);
+
+void QMC5883_StartCal(QMC5883_Sensor* pSensor);
 
 #endif /* SENSORLIB_QMC5883_H_ */

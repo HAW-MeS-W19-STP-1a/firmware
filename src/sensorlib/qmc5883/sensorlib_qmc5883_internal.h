@@ -134,5 +134,6 @@ void QMC5883_GetSensorData(QMC5883_Sensor* pSensor);
 
 uint16_t QMC5883_CalcAzimuth(QMC5883_Sensor* pSensor);
 int16_t QMC5883_CalcTemperature(QMC5883_Sensor* pSensor);
+void QMC5883_HandleCalData(QMC5883_Sensor* pSensor);
 
 #endif /* SENSORLIB_QMC5883_INTERNAL_H_ */
