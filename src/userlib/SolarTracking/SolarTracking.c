@@ -46,6 +46,8 @@ typedef struct {
 /*! Aktivierungszustand des Moduls                                            */
 static bool bTrackingActive;
 
+static bool bDelay;
+
 /*! Sollwert für die Ausrichtung                                              */
 static Tracking_Setpoint_TypeDef sSetpoint;
 
@@ -131,7 +133,7 @@ static bool Tracking_CalcSetpoint(void)
     &dZenith
   );
   iAzimuth = (int)(dAzimuth * 10);
-  iZenith = (int)(dZenith * 10);
+  iZenith = 900 - (int)(dZenith * 10);
   
   /* Grenzwerte für Drehung abfangen                      */
   if (!CheckLimits(iAzimuth, iZenith))
@@ -157,6 +159,7 @@ static bool Tracking_CalcSetpoint(void)
  ******************************************************************************/
 void Tracking_Init(void)
 {
+  bDelay = false;
   bTrackingActive = false;
 }
 
@@ -174,10 +177,24 @@ void Tracking_Task1s(void)
   {
     if (sSetpoint.bValid)
     {
-      if (Motor_IsTurnReached() && Motor_IsTiltReached())
+      if (bDelay)
+      {
+        Motor_Cmd(true);
+        bDelay = false;
+      }
+      else if (Motor_IsTurnReached() && Motor_IsTiltReached())
       { 
         /* Sollwert erreicht                                */
         Motor_Cmd(false);
+        Motor_SetTurnRef(sSensorQMC5883.sMeasure.uiAzimuth);
+        if (!(Motor_IsTurnReached() && Motor_IsTiltReached()))
+        {
+          bDelay = true;
+        }
+        else
+        {
+          sSetpoint.bValid = false;
+        }
       }
     }
     else
@@ -206,6 +223,12 @@ void Tracking_TaskWakeup(void)
       /* Neue Sollposition anfahren                       */
       printf("Track: %d, %d\r\n", sSetpoint.iAzimuth, sSetpoint.iZenith);
       
+      if (Motor_IsTurnReached() && Motor_IsTiltReached())
+      {
+        /* Kompensation                                   */
+        Motor_SetTurnRef(sSensorQMC5883.sMeasure.uiAzimuth);
+      }
+      
       Motor_SetTurn(sSetpoint.iAzimuth);
       Motor_SetTilt(sSetpoint.iZenith);
       if (!Motor_IsTiltReached() || !Motor_IsTurnReached())
@@ -233,6 +256,7 @@ void Tracking_Cmd(bool bEnable)
 {
   if (Motor_IsHomingActive())
   {
+    /* Homing starten                                     */
     Motor_Cmd(true);
   }
   else
